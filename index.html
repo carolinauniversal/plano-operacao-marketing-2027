@@ -775,6 +775,15 @@
           <input type="text" id="novoProjetoNome" maxlength="200" placeholder="Ex: Campanha Dia do Mecânico" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
         </div>
         <div>
+          <p class="text-xs font-bold uppercase text-neutral-700 mb-1">Detalhamento do projeto (PDF) <span class="normal-case font-semibold text-neutral-400">— opcional</span></p>
+          <input type="file" id="novoProjetoArquivo" accept="application/pdf,.pdf" class="hidden" onchange="paCampoNovoProjetoAtualizar()">
+          <label id="novoProjetoArquivoVazio" for="novoProjetoArquivo" class="flex items-center gap-3 p-3 border border-dashed border-neutral-300 rounded-lg cursor-pointer hover:bg-neutral-50 text-xs">
+            <span class="shrink-0 w-8 h-8 rounded bg-red-50 text-red-700 font-black text-[10px] flex items-center justify-center border border-red-200">PDF</span>
+            <span><strong class="text-neutral-900">Anexar o documento do projeto</strong><span class="block text-neutral-500">Somente PDF, até 25 MB. Também dá para anexar ou trocar depois.</span></span>
+          </label>
+          <div id="novoProjetoArquivoInfo" class="hidden flex items-center gap-3 p-3 border border-neutral-200 rounded-lg bg-neutral-50 text-xs"></div>
+        </div>
+        <div>
           <p class="text-xs font-bold uppercase text-neutral-700 mb-1">KPIs do projeto</p>
           <div id="novoProjetoKpis" class="space-y-2"></div>
           <button type="button" onclick="kpiAdicionarLinha('novoProjetoKpis')" class="mt-2 px-3 py-1.5 border border-dashed border-neutral-400 rounded text-xs font-bold text-neutral-700 hover:bg-neutral-50 w-full">＋ Adicionar KPI</button>
@@ -1107,6 +1116,14 @@
       projetos = linhasProjetos.map(p => ({
         id: p.id,
         nome: p.nome,
+        // PDF de detalhamento do projeto (projetos-arquivos.js)
+        arquivo: p.arquivo_path ? {
+          path: p.arquivo_path,
+          nome: p.arquivo_nome || 'projeto.pdf',
+          tamanho: Number(p.arquivo_tamanho || 0),
+          enviadoEm: p.arquivo_enviado_em || null,
+          enviadoPor: p.arquivo_enviado_por || ''
+        } : null,
         pilares: linhasPilares.filter(pilar => pilar.projeto_id === p.id).map(pilar => ({
           id: pilar.id,
           nome: pilar.nome,
@@ -2364,6 +2381,7 @@
               <h3 class="font-black text-sm text-neutral-900">${escaparHtml(p.nome)}</h3>
               ${usuarioLogado.role === 'gestor' ? `<button onclick="abrirModalNovoPilar('${p.id}')" class="px-3 py-1.5 border border-neutral-300 rounded text-xs font-bold hover:bg-neutral-100">+ Novo Pilar</button>` : ''}
             </div>
+            ${typeof paBlocoProjeto === 'function' ? paBlocoProjeto(p) : ''}
             ${pilares || '<p class="text-xs text-neutral-400">Nenhum pilar cadastrado.</p>'}
             ${typeof kpiBlocoProjeto === 'function' ? kpiBlocoProjeto(p) : ''}
           </div>
@@ -3018,6 +3036,7 @@
       kpiGarantirModais(); // lista de unidades sugeridas
       document.getElementById('novoProjetoKpis').innerHTML = '';
       kpiAdicionarLinha('novoProjetoKpis');
+      paCampoNovoProjetoLimpar();
       document.getElementById('modalNovoProjeto').classList.remove('hidden');
       document.getElementById('novoProjetoNome').focus();
     }
@@ -3031,13 +3050,23 @@
       if (erro) { notificar(erro, 'erro'); return; }
       await comBotaoOcupado(e, async () => {
         // Projeto + KPIs numa única transação
-        const { error } = await clienteSupabase.rpc('criar_projeto', { p_nome: nome, p_ano: new Date().getFullYear(), p_kpis: kpisNovos });
+        const arquivo = paArquivoNovoProjeto();
+        const { data: projetoId, error } = await clienteSupabase.rpc('criar_projeto', { p_nome: nome, p_ano: new Date().getFullYear(), p_kpis: kpisNovos });
         if (error) {
           notificar(error.code === '23505' ? 'Já existe um projeto com esse nome.' : `Não foi possível criar o projeto: ${mensagemErro(error)}`, 'erro');
           return;
         }
+        let avisoArquivo = '';
+        if (arquivo && projetoId) {
+          try {
+            await paEnviarArquivo(projetoId, arquivo);
+            avisoArquivo = ' PDF anexado.';
+          } catch (erroArquivo) {
+            notificar(`O projeto foi criado, mas o PDF não foi anexado: ${paMensagemErro(erroArquivo)} Anexe pelo card do projeto.`, 'erro');
+          }
+        }
         fecharModalNovoProjeto();
-        notificar(`Projeto "${nome}" criado${kpisNovos.length ? ` com ${kpisNovos.length} KPI(s)` : ''}. Agora cadastre os pilares dele.`);
+        notificar(`Projeto "${nome}" criado${kpisNovos.length ? ` com ${kpisNovos.length} KPI(s)` : ''}.${avisoArquivo} Agora cadastre os pilares dele.`);
         await recarregarDados();
       });
     }
@@ -3181,6 +3210,7 @@
   </script>
   <!-- KPIs dos projetos e módulo de relatórios (gestão e diretoria) -->
   <script src="kpis.js"></script>
+  <script src="projetos-arquivos.js"></script>
   <script src="relatorios.js"></script>
 </body>
 </html>
