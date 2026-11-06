@@ -1,0 +1,3163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal Soluções Automotivas - Plataforma de Marketing</title>
+  
+  <!-- Estilos e Bibliotecas -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    .glass-card {
+      background: #ffffff;
+      box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.06);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    /* Relatórios: números alinhados nas tabelas */
+    .rel-tabela table td, .rel-tabela table th { font-variant-numeric: tabular-nums; }
+    /* Impressão / PDF dos relatórios */
+    @media print {
+      header, nav, #toast-area, .rel-nao-imprimir { display: none !important; }
+      body { background: #ffffff !important; }
+      .rel-card { break-inside: avoid; box-shadow: none !important; }
+      .rel-secao { break-before: page; }
+      .rel-secao:first-of-type { break-before: auto; }
+    }
+  </style>
+</head>
+<body class="bg-neutral-100 text-neutral-800 font-sans min-h-screen">
+
+  <!-- ===================================================================== -->
+  <!-- 1. TELA DE LOGIN CORPORATIVA                                         -->
+  <!-- ===================================================================== -->
+  <div id="tela-login" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-neutral-900 via-black to-neutral-900">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl border-t-4 border-red-600 p-8">
+      
+      <div class="text-center mb-6">
+        <div class="inline-block bg-red-600 text-white font-black text-xl px-4 py-1.5 rounded tracking-widest uppercase mb-2 shadow-sm">
+          UNIVERSAL
+        </div>
+        <h2 class="text-lg font-black text-neutral-900">Soluções Automotivas</h2>
+        <p class="text-xs text-neutral-500 font-medium">Marketing Operations & Governança Orçamentária</p>
+      </div>
+
+      <form onsubmit="executarLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">E-mail Corporativo</label>
+          <input type="email" id="loginEmail" placeholder="seu.nome@amortex.com.br" required class="w-full border border-neutral-300 rounded-lg p-2.5 text-xs font-medium focus:ring-2 focus:ring-red-600 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Senha de Acesso</label>
+          <input type="password" id="loginSenha" placeholder="••••••••" required class="w-full border border-neutral-300 rounded-lg p-2.5 text-xs font-medium focus:ring-2 focus:ring-red-600 outline-none">
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-black uppercase tracking-wider transition shadow-md">
+          Entrar na Plataforma
+        </button>
+        <button type="button" onclick="solicitarRecuperacaoSenha()" class="w-full text-xs text-neutral-500 hover:text-red-600 font-semibold">Esqueci a senha</button>
+      </form>
+
+      <div class="mt-6 pt-5 border-t border-neutral-200 text-center">
+        <p class="text-xs text-neutral-600 font-medium">
+          Primeiro acesso? 
+          <button onclick="abrirModalSolicitacao()" class="text-red-600 hover:text-red-700 font-bold underline ml-1">
+            Solicite cadastro
+          </button>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 2. APLICAÇÃO PRINCIPAL (PÓS-LOGIN)                                    -->
+  <!-- ===================================================================== -->
+  <div id="app-principal" class="hidden min-h-screen flex flex-col">
+
+    <!-- CABEÇALHO MASTER -->
+    <header class="bg-black text-white shadow-xl sticky top-0 z-40 border-b-2 border-red-600">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+        
+        <div class="flex items-center space-x-3">
+          <img src="universal_logo.png" alt="Universal Soluções Automotivas" class="h-14 w-auto -my-2 -ml-2 select-none" draggable="false">
+          <div class="border-l border-neutral-700 pl-3">
+            <h1 class="text-sm font-bold text-white leading-tight">Plano e Operação - Marketing 2027</h1>
+            <p id="subtituloPerfilHeader" class="text-[11px] text-neutral-400">Portal Operacional</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <div class="text-right">
+            <span id="labelUsuarioNome" class="text-xs font-bold text-white block leading-tight">Nome</span>
+            <span id="labelUsuarioCargo" class="text-[10px] text-neutral-400 block">Cargo</span>
+          </div>
+          <button onclick="executarLogout()" class="px-3 py-1.5 bg-neutral-800 hover:bg-red-600 text-neutral-300 hover:text-white rounded text-xs font-bold transition">
+            Sair
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- NAVEGAÇÃO SECUNDÁRIA DINÂMICA CONFORME O PERFIL -->
+    <nav class="bg-neutral-900 text-neutral-300 border-b border-neutral-800">
+      <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap justify-between items-center gap-2">
+        
+        <!-- Menu do Perfil COLABORADOR -->
+        <div id="nav-colaborador" class="hidden flex space-x-2 text-xs font-bold">
+          <button onclick="navegarColaborador('dashboard')" id="btnColabDash" class="px-3 py-1.5 rounded bg-red-600 text-white">1. Minha Dashboard & Capacidade</button>
+          <button onclick="navegarColaborador('kanban')" id="btnColabKanban" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">2. Quadro Kanban</button>
+          <button onclick="abrirModalNovaTarefa()" class="px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-white">+ Criar Atividade</button>
+        </div>
+
+        <!-- Menu do Perfil GESTOR e DIRETORIA (DIRETORIA SÓ ENXERGA, NÃO OPERA) -->
+        <div id="nav-gestor" class="hidden flex space-x-2 text-xs font-bold">
+          <button onclick="navegarGestor('budget')" id="btnGestorBudget" class="px-3 py-1.5 rounded bg-red-600 text-white">Orçamento & Budget</button>
+          <button onclick="navegarGestor('lancamento')" id="btnGestorLanc" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Lançar Gasto</button>
+          <button onclick="navegarGestor('pilares')" id="btnGestorPil" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Projetos & Pilares</button>
+          <button onclick="navegarGestor('kanban_geral')" id="btnGestorKanban" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Kanban Geral</button>
+          <button onclick="navegarGestor('equipe')" id="btnGestorEquipe" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Gestão de Equipe</button>
+          <button onclick="navegarGestor('relatorios')" id="btnGestorRelatorios" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">📊 Relatórios</button>
+          <button onclick="abrirModalNovaTarefa()" id="btnGestorCriarTarefa" class="px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-white">+ Atribuir Tarefa</button>
+        </div>
+
+        <!-- Tag do Perfil Ativo -->
+        <div class="text-[11px] font-bold text-neutral-400 font-mono">
+          Nível: <span id="tagPerfilBadge" class="text-red-500 uppercase font-black">COLABORADOR</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+
+      <!-- =============================================================== -->
+      <!-- A. VISÃO 1: PERFIL COLABORADOR                                  -->
+      <!-- =============================================================== -->
+      <div id="container-colaborador" class="hidden space-y-6">
+
+        <!-- TELA 1: DASHBOARD PESSOAL & CAPACIDADE -->
+        <section id="colab-tela-dashboard" class="space-y-6">
+
+          <!-- Atividade em produção agora (cronômetro) -->
+          <div id="colab-em-producao"></div>
+
+          <div class="glass-card p-4 rounded-xl border border-neutral-200 flex flex-wrap justify-between items-center gap-3">
+            <div>
+              <h2 class="text-base font-black text-neutral-900">Painel de Produtividade & Prazos</h2>
+              <p class="text-xs text-neutral-500">Acompanhamento das suas atividades individuais e capacidade de execução.</p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <label class="text-xs font-bold text-neutral-700">Filtrar por Projeto:</label>
+              <select id="filtroProjetoColab" onchange="renderizarDashboardColaborador()" class="border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
+                <option value="todos">Todos os Projetos</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cards de Prazos & SLAs -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="glass-card p-4 rounded-xl border-l-4 border-red-600 border border-neutral-200">
+              <p class="text-[11px] uppercase font-bold text-neutral-500">Vencendo Hoje</p>
+              <h3 id="colab-kpi-hoje" class="text-2xl font-black text-red-600 mt-1">0</h3>
+              <span class="text-[10px] text-neutral-400">Exige prioridade imediata</span>
+            </div>
+            <div class="glass-card p-4 rounded-xl border-l-4 border-amber-500 border border-neutral-200">
+              <p class="text-[11px] uppercase font-bold text-neutral-500">Vencendo na Semana</p>
+              <h3 id="colab-kpi-semana" class="text-2xl font-black text-amber-600 mt-1">0</h3>
+              <span class="text-[10px] text-neutral-400">Próximos 7 dias</span>
+            </div>
+            <div class="glass-card p-4 rounded-xl border-l-4 border-neutral-600 border border-neutral-200">
+              <p class="text-[11px] uppercase font-bold text-neutral-500">Vencendo no Mês</p>
+              <h3 id="colab-kpi-mes" class="text-2xl font-black text-neutral-900 mt-1">0</h3>
+              <span class="text-[10px] text-neutral-400">Mês corrente</span>
+            </div>
+            <div class="glass-card p-4 rounded-xl border-l-4 border-black border border-neutral-200">
+              <p class="text-[11px] uppercase font-bold text-neutral-500">Total de Demandas</p>
+              <h3 id="colab-kpi-total" class="text-2xl font-black text-neutral-900 mt-1">0</h3>
+              <span class="text-[10px] text-neutral-400">Atribuídas ao seu perfil</span>
+            </div>
+          </div>
+
+          <!-- Capacidade Operacional -->
+          <div class="glass-card p-5 rounded-xl border border-neutral-200 space-y-4">
+            <div class="border-b border-neutral-100 pb-2 flex justify-between items-center">
+              <div>
+                <h3 class="font-black text-sm text-neutral-900">Balanço de Carga Horária & Capacidade</h3>
+                <p class="text-xs text-neutral-500">Tempo consumido, planejado e margem de horas disponíveis.</p>
+              </div>
+              <span class="text-[10px] font-bold uppercase bg-neutral-100 px-2 py-1 rounded text-neutral-700">8h/dia | 40h/sem | 160h/mês</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-200 space-y-2">
+                <div class="flex justify-between items-center text-xs font-bold">
+                  <span>Capacidade Hoje (8h)</span>
+                  <span id="colab-horas-hoje-status" class="text-emerald-700">Disponível</span>
+                </div>
+                <div class="text-xs space-y-1 text-neutral-600">
+                  <div class="flex justify-between"><span>Tempo Consumido:</span> <strong id="colab-horas-hoje-gasto">0h</strong></div>
+                  <div class="flex justify-between"><span>Tempo Previsto:</span> <strong id="colab-horas-hoje-previsto">0h</strong></div>
+                  <div class="flex justify-between border-t border-neutral-200 pt-1 font-bold"><span>Saldo Disponível:</span> <span id="colab-horas-hoje-saldo">8h</span></div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-200 space-y-2">
+                <div class="flex justify-between items-center text-xs font-bold">
+                  <span>Capacidade na Semana (40h)</span>
+                  <span id="colab-horas-sem-status" class="text-emerald-700">Disponível</span>
+                </div>
+                <div class="text-xs space-y-1 text-neutral-600">
+                  <div class="flex justify-between"><span>Tempo Consumido:</span> <strong id="colab-horas-sem-gasto">0h</strong></div>
+                  <div class="flex justify-between"><span>Tempo Previsto:</span> <strong id="colab-horas-sem-previsto">0h</strong></div>
+                  <div class="flex justify-between border-t border-neutral-200 pt-1 font-bold"><span>Saldo Disponível:</span> <span id="colab-horas-sem-saldo">40h</span></div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-200 space-y-2">
+                <div class="flex justify-between items-center text-xs font-bold">
+                  <span>Capacidade no Mês (160h)</span>
+                  <span id="colab-horas-mes-status" class="text-emerald-700">Disponível</span>
+                </div>
+                <div class="text-xs space-y-1 text-neutral-600">
+                  <div class="flex justify-between"><span>Tempo Consumido:</span> <strong id="colab-horas-mes-gasto">0h</strong></div>
+                  <div class="flex justify-between"><span>Tempo Previsto:</span> <strong id="colab-horas-mes-previsto">0h</strong></div>
+                  <div class="flex justify-between border-t border-neutral-200 pt-1 font-bold"><span>Saldo Disponível:</span> <span id="colab-horas-mes-saldo">160h</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gráficos do Colaborador -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="glass-card p-5 rounded-xl border border-neutral-200">
+              <h3 class="font-bold text-sm text-neutral-900 mb-1">Status das Minhas Atividades</h3>
+              <div class="relative h-64 flex items-center justify-center">
+                <canvas id="graficoMinhasTarefas"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-card p-5 rounded-xl border border-neutral-200">
+              <h3 class="font-bold text-sm text-neutral-900 mb-1">Visão Geral de Andamento dos Projetos</h3>
+              <div class="relative h-64">
+                <canvas id="graficoAndamentoGeralProjetos"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabela de Minhas Tarefas -->
+          <div class="glass-card rounded-xl border border-neutral-200 overflow-hidden">
+            <div class="p-4 border-b border-neutral-200 flex justify-between items-center">
+              <div>
+                <h3 class="font-bold text-sm text-neutral-900">Minha Fila de Atividades</h3>
+                <p class="text-xs text-neutral-500">Inicie, pause e finalize suas atividades — o tempo é registrado automaticamente</p>
+              </div>
+              <button onclick="navegarColaborador('kanban')" class="text-xs text-red-600 font-bold hover:underline">Ver no Kanban →</button>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left text-xs text-neutral-600">
+                <thead class="bg-neutral-100 text-neutral-800 uppercase font-black">
+                  <tr>
+                    <th class="p-3">Atividade</th>
+                    <th class="p-3">Projeto / Pilar</th>
+                    <th class="p-3">Prazo (SLA)</th>
+                    <th class="p-3 text-center">Horas (Consumidas / Previstas)</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-minhas-tarefas" class="divide-y divide-neutral-200 font-medium"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TELA 2: QUADRO KANBAN & APONTAMENTO -->
+        <section id="colab-tela-kanban" class="hidden space-y-6">
+          <div class="glass-card p-4 rounded-xl border border-neutral-200 flex flex-wrap justify-between items-center gap-3">
+            <div>
+              <h2 class="text-base font-black text-neutral-900">Quadro Kanban de Tarefas</h2>
+              <p class="text-xs text-neutral-500">Use Iniciar, Pausar e Concluir (ao concluir, informe se precisa de aprovação). O tempo é registrado automaticamente.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <label for="filtroProjetoKanban" class="text-xs font-bold text-neutral-700">Projeto:</label>
+              <select id="filtroProjetoKanban" onchange="renderizarKanbanGeral()" class="border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
+                <option value="todos">Todos os Projetos</option>
+              </select>
+              <span id="blocoFiltroResponsavelKanban" class="hidden inline-flex items-center gap-2">
+                <label for="filtroResponsavelKanban" class="text-xs font-bold text-neutral-700">Responsável:</label>
+                <select id="filtroResponsavelKanban" onchange="renderizarKanbanGeral()" class="border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
+                  <option value="todos">Toda a equipe</option>
+                </select>
+              </span>
+            </div>
+          </div>
+
+          <!-- Colunas Kanban -->
+          <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div class="bg-neutral-200/60 p-3 rounded-xl border border-neutral-300 flex flex-col">
+              <div class="flex justify-between items-center pb-2 mb-2 border-b border-neutral-300">
+                <span class="font-bold text-xs uppercase tracking-wider text-neutral-700">A Fazer</span>
+                <span id="kanban-c-afazer" class="text-xs bg-neutral-300 font-bold px-2 py-0.5 rounded text-neutral-800">0</span>
+              </div>
+              <div id="coluna-k-afazer" class="space-y-3 min-h-[350px]"></div>
+            </div>
+
+            <div class="bg-neutral-200/60 p-3 rounded-xl border border-neutral-300 flex flex-col">
+              <div class="flex justify-between items-center pb-2 mb-2 border-b border-neutral-300">
+                <span class="font-bold text-xs uppercase tracking-wider text-neutral-700">Em Produção</span>
+                <span id="kanban-c-producao" class="text-xs bg-neutral-300 font-bold px-2 py-0.5 rounded text-neutral-800">0</span>
+              </div>
+              <div id="coluna-k-producao" class="space-y-3 min-h-[350px]"></div>
+            </div>
+
+            <div class="bg-neutral-200/60 p-3 rounded-xl border border-neutral-300 flex flex-col">
+              <div class="flex justify-between items-center pb-2 mb-2 border-b border-neutral-300">
+                <span class="font-bold text-xs uppercase tracking-wider text-neutral-700">Em Pausa</span>
+                <span id="kanban-c-pausa" class="text-xs bg-neutral-300 font-bold px-2 py-0.5 rounded text-neutral-800">0</span>
+              </div>
+              <div id="coluna-k-pausa" class="space-y-3 min-h-[350px]"></div>
+            </div>
+
+            <div class="bg-neutral-200/60 p-3 rounded-xl border border-neutral-300 flex flex-col">
+              <div class="flex justify-between items-center pb-2 mb-2 border-b border-neutral-300">
+                <span class="font-bold text-xs uppercase tracking-wider text-neutral-700">Em Aprovação</span>
+                <span id="kanban-c-aprovacao" class="text-xs bg-neutral-300 font-bold px-2 py-0.5 rounded text-neutral-800">0</span>
+              </div>
+              <div id="coluna-k-aprovacao" class="space-y-3 min-h-[350px]"></div>
+            </div>
+
+            <div class="bg-neutral-200/60 p-3 rounded-xl border border-neutral-300 flex flex-col">
+              <div class="flex justify-between items-center pb-2 mb-2 border-b border-neutral-300">
+                <span class="font-bold text-xs uppercase tracking-wider text-neutral-700">Concluído</span>
+                <span id="kanban-c-concluido" class="text-xs bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded">0</span>
+              </div>
+              <div id="coluna-k-concluido" class="space-y-3 min-h-[350px]"></div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- B. VISÃO GESTOR / DIRETORIA (PAINEL FINANCEIRO E BUDGET)        -->
+      <!-- =============================================================== -->
+      <div id="container-gestao-diretoria" class="hidden space-y-6">
+
+        <!-- Alerta de aferições de KPI pendentes (gestão) — kpis.js -->
+        <div id="gestor-alerta-kpis"></div>
+
+        <!-- Atividade da própria gestora em produção (aparece em todas as abas) -->
+        <div id="gestor-em-producao"></div>
+
+        <!-- SUB-SEÇÃO: BUDGET MASTER -->
+        <section id="gestor-secao-budget" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="glass-card p-4 rounded-xl border border-neutral-200">
+              <p class="text-[11px] uppercase font-bold text-neutral-500 tracking-wider">Budget Previsto</p>
+              <h3 id="kpi-orcado" class="text-xl font-black text-neutral-900 mt-1">R$ 0,00</h3>
+              <span id="kpi-qtd-projetos" class="text-xs text-neutral-600 font-semibold">0 Projetos</span>
+            </div>
+            <div class="glass-card p-4 rounded-xl border border-neutral-200">
+              <p class="text-[11px] uppercase font-bold text-neutral-500 tracking-wider">Total Realizado</p>
+              <h3 id="kpi-gasto" class="text-xl font-black text-neutral-900 mt-1">R$ 0,00</h3>
+              <span id="kpi-pct-exec" class="text-xs font-bold px-2 py-0.5 rounded bg-neutral-200 text-neutral-800">0% executado</span>
+            </div>
+            <div class="glass-card p-4 rounded-xl border border-neutral-200">
+              <p class="text-[11px] uppercase font-bold text-neutral-500 tracking-wider">Saldo Global</p>
+              <h3 id="kpi-saldo" class="text-xl font-black text-emerald-700 mt-1">R$ 0,00</h3>
+              <span class="text-xs text-emerald-700 font-semibold">Operação Líquida</span>
+            </div>
+            <div class="glass-card p-4 rounded-xl border-2 border-red-500 bg-red-50/40">
+              <p class="text-[11px] uppercase font-black text-red-700 tracking-wider">Déficit em Pilares</p>
+              <h3 id="kpi-deficit-total" class="text-xl font-black text-red-700 mt-1">R$ 0,00</h3>
+              <span id="kpi-qtd-estourados" class="text-xs font-bold text-red-600">0 pilares estourados</span>
+            </div>
+            <div class="glass-card p-4 rounded-xl border border-neutral-300 bg-neutral-50">
+              <p class="text-[11px] uppercase font-bold text-neutral-600 tracking-wider">Total Realocado</p>
+              <h3 id="kpi-total-realocado" class="text-xl font-black text-neutral-900 mt-1">R$ 0,00</h3>
+              <span id="kpi-qtd-realocacoes" class="text-xs font-semibold text-neutral-600">0 transferências</span>
+            </div>
+          </div>
+
+          <!-- Alerta de Estouros -->
+          <div id="bloco-alerta-estouros" class="hidden glass-card rounded-xl border-2 border-red-600 bg-red-50/20 overflow-hidden shadow-sm">
+            <div class="p-4 bg-red-600 text-white flex justify-between items-center">
+              <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <h3 class="font-bold text-sm tracking-wide">Atenção Crítica: Budgets de Pilares Estourados</h3>
+              </div>
+              <span class="text-[11px] bg-black text-white font-black px-2.5 py-0.5 rounded uppercase">Déficit Ativo</span>
+            </div>
+            <div class="p-4 overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left text-xs">
+                <thead class="text-neutral-700 uppercase font-black border-b border-red-200">
+                  <tr>
+                    <th class="pb-2">Projeto</th>
+                    <th class="pb-2">Pilar Estourado</th>
+                    <th class="pb-2 text-right">Orçado</th>
+                    <th class="pb-2 text-right">Gasto</th>
+                    <th class="pb-2 text-right text-red-700">Déficit</th>
+                    <th class="pb-2 text-center">% Estouro</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-pilares-estourados" class="divide-y divide-red-100 font-medium"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ANDAMENTO DAS ATIVIDADES POR PROJETO -->
+          <div class="glass-card rounded-xl border border-neutral-200 overflow-hidden">
+            <div class="p-4 border-b border-neutral-200 bg-neutral-50 flex flex-wrap justify-between items-center gap-3">
+              <div>
+                <h2 class="font-black text-neutral-900 text-base">Andamento das Atividades por Projeto</h2>
+                <p class="text-xs text-neutral-500">Status, prazos e horas da equipe nos projetos em execução.</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <label for="filtroAndamentoProjeto" class="sr-only">Projeto</label>
+                <select id="filtroAndamentoProjeto" onchange="renderizarPainelAndamento()" class="border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
+                  <option value="todos">Todos os projetos</option>
+                </select>
+                <label for="filtroAndamentoColaborador" class="sr-only">Colaborador</label>
+                <select id="filtroAndamentoColaborador" onchange="renderizarPainelAndamento()" class="border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
+                  <option value="todos">Toda a equipe</option>
+                </select>
+              </div>
+            </div>
+            <div class="p-4 space-y-5">
+              <div id="andamento-kpis" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+              <div id="andamento-projetos" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div class="glass-card rounded-xl border border-neutral-200 overflow-hidden lg:col-span-3">
+              <div class="p-4 border-b border-neutral-200">
+                <h3 class="font-bold text-sm text-neutral-900">Horas por Colaborador × Projeto</h3>
+                <p class="text-xs text-neutral-500">Horas trabalhadas por cada pessoa (inclusive antes de transferências) / previstas nas atividades sob sua responsabilidade. A última linha mostra o total de cada projeto.</p>
+              </div>
+              <div id="andamento-matriz-horas" class="overflow-x-auto custom-scrollbar"></div>
+            </div>
+            <div class="glass-card rounded-xl border border-neutral-200 overflow-hidden lg:col-span-2">
+              <div class="p-4 border-b border-neutral-200">
+                <h3 class="font-bold text-sm text-neutral-900">Pontos de Atenção</h3>
+                <p class="text-xs text-neutral-500">Atividades atrasadas e entregas dos próximos 7 dias.</p>
+              </div>
+              <div id="andamento-atencao" class="divide-y divide-neutral-100 max-h-[420px] overflow-y-auto custom-scrollbar"></div>
+            </div>
+          </div>
+
+          <!-- Gráficos Gestão -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="glass-card p-5 rounded-xl border border-neutral-200 lg:col-span-2">
+              <div class="flex justify-between items-center mb-4 border-b border-neutral-100 pb-3">
+                <h2 class="font-bold text-neutral-900 text-base">Orçado vs. Praticado por Projeto</h2>
+                <span class="text-[11px] bg-neutral-100 px-2.5 py-1 rounded text-neutral-700 font-bold border border-neutral-200">Visão Geral</span>
+              </div>
+              <div class="relative h-80">
+                <canvas id="graficoProjetosGestor"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-card p-5 rounded-xl border border-neutral-200">
+              <div class="flex justify-between items-center mb-4 border-b border-neutral-100 pb-3">
+                <h2 class="font-bold text-neutral-900 text-base">Despesas por Categoria</h2>
+                <span class="text-[11px] bg-neutral-100 px-2.5 py-1 rounded text-neutral-700 font-bold border border-neutral-200">Top Tipos</span>
+              </div>
+              <div class="relative h-80 flex items-center justify-center">
+                <canvas id="graficoCategoriasGestor"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trilha de Realocações -->
+          <div class="glass-card rounded-xl border border-neutral-200 overflow-hidden">
+            <div class="p-4 border-b border-neutral-200 flex justify-between items-center bg-neutral-50">
+              <h3 class="font-bold text-neutral-900 text-sm flex items-center gap-1.5">🔄 Trilha de Auditoria: Realocações</h3>
+              <span id="badge-contador-realocacoes" class="text-xs font-bold px-2 py-1 rounded bg-neutral-200 text-neutral-800">0 registros</span>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left text-xs text-neutral-600">
+                <thead class="bg-neutral-100 text-neutral-800 uppercase font-bold">
+                  <tr>
+                    <th class="p-3">Data/Hora</th>
+                    <th class="p-3">Origem</th>
+                    <th class="p-3">Destino</th>
+                    <th class="p-3">Motivo</th>
+                    <th class="p-3 text-right">Valor</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-historico-realocacoes" class="divide-y divide-neutral-200 font-medium"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SUB-SEÇÃO: NOVO GASTO (EXCLUSIVO GESTOR) -->
+        <section id="gestor-secao-lancamento" class="hidden max-w-3xl mx-auto">
+          <div class="glass-card p-6 rounded-xl border border-neutral-200">
+            <h2 class="text-xl font-black text-neutral-900 mb-1">Novo Lançamento de Despesa</h2>
+            <p class="text-xs text-neutral-500 mb-4">Registro com validação e proteção de saldo.</p>
+
+            <form onsubmit="validarESalvarGasto(event)" class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Data *</label>
+                  <input type="date" id="gastoData" required class="w-full border border-neutral-300 rounded p-2 text-xs focus:ring-2 focus:ring-red-600 outline-none">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Valor (R$) *</label>
+                  <input type="number" step="0.01" min="0.01" id="gastoValor" placeholder="Ex: 8500.00" required class="w-full border border-neutral-300 rounded p-2 text-xs font-bold text-neutral-900 focus:ring-2 focus:ring-red-600 outline-none">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Projeto *</label>
+                  <select id="gastoProjeto" onchange="atualizarSelectPilaresGasto()" required class="w-full border border-neutral-300 rounded p-2 text-xs focus:ring-2 focus:ring-red-600 outline-none"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Pilar *</label>
+                  <select id="gastoPilar" onchange="exibirSaldoDisponivelPilarGasto()" required class="w-full border border-neutral-300 rounded p-2 text-xs focus:ring-2 focus:ring-red-600 outline-none"></select>
+                  <div id="infoSaldoPilarGasto" class="text-xs text-neutral-500 mt-1 font-semibold"></div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Tipo de Gasto *</label>
+                  <select id="gastoTipo" required class="w-full border border-neutral-300 rounded p-2 text-xs focus:ring-2 focus:ring-red-600 outline-none"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Forma Pgto *</label>
+                  <select id="gastoFormaPgto" required class="w-full border border-neutral-300 rounded p-2 text-xs focus:ring-2 focus:ring-red-600 outline-none">
+                    <option value="Boleto Bancário">Boleto Bancário</option>
+                    <option value="Cartão Corporativo">Cartão Corporativo</option>
+                    <option value="PIX / Transferência">PIX / Transferência</option>
+                    <option value="Faturamento Direto">Faturamento Direto</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Fornecedor *</label>
+                <input type="text" id="gastoFornecedor" placeholder="Ex: Gráfica Alpha" required class="w-full border border-neutral-300 rounded p-2 text-xs focus:ring-2 focus:ring-red-600 outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">Descrição *</label>
+                <textarea id="gastoDescricao" rows="2" placeholder="Descreva a finalidade..." required class="w-full border border-neutral-300 rounded p-2 text-xs focus:ring-2 focus:ring-red-600 outline-none"></textarea>
+              </div>
+
+              <button type="submit" class="w-full py-2 bg-red-600 text-white text-xs font-black uppercase rounded shadow">Gravar Despesa</button>
+            </form>
+          </div>
+        </section>
+
+        <!-- SUB-SEÇÃO: MATRIZ DE PROJETOS & PILARES -->
+        <section id="gestor-secao-pilares" class="hidden space-y-6">
+          <div class="glass-card p-6 rounded-xl border border-neutral-200">
+            <div class="flex justify-between items-center border-b border-neutral-200 pb-3 mb-4">
+              <h2 class="text-xl font-black text-neutral-900">Matriz de Projetos & Pilares</h2>
+              <button onclick="abrirModalNovoProjeto()" id="btnGestorCriarProjeto" class="px-4 py-2 bg-black text-white rounded text-xs font-bold">+ Novo Projeto</button>
+            </div>
+            <div id="lista-projetos-pilares" class="space-y-4"></div>
+          </div>
+        </section>
+
+        <!-- SUB-SEÇÃO: GESTÃO DE EQUIPE (EXCLUSIVO GESTOR) -->
+        <section id="gestor-secao-equipe" class="hidden space-y-6">
+          <div class="glass-card p-6 rounded-xl border border-neutral-200">
+            <div class="flex justify-between items-center border-b border-neutral-200 pb-3 mb-4">
+              <h2 class="text-lg font-black text-neutral-900">Membros da Equipe & Acessos</h2>
+              <button onclick="abrirModalNovoUsuario()" id="btnCadastrarUsuario" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold">+ Cadastrar Usuário</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-neutral-600">
+                <thead class="bg-neutral-100 text-neutral-800 uppercase font-black">
+                  <tr>
+                    <th class="p-3">Nome</th>
+                    <th class="p-3">E-mail</th>
+                    <th class="p-3">Cargo</th>
+                    <th class="p-3">Contrato</th>
+                    <th class="p-3">Perfil</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3 text-center">Atividades em aberto</th>
+                    <th class="p-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-usuarios-equipe" class="divide-y divide-neutral-200 font-medium"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SUB-SEÇÃO: RELATÓRIOS (GESTÃO E DIRETORIA) — conteúdo montado por relatorios.js -->
+        <section id="gestor-secao-relatorios" class="hidden space-y-6"></section>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAIS DO SISTEMA -->
+  <!-- Detalhe da atividade + anotações -->
+  <div id="modalDetalheTarefa" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full shadow-2xl border-t-4 border-red-600 max-h-[92vh] flex flex-col">
+      <div class="p-5 border-b border-neutral-200 flex justify-between items-start gap-3">
+        <div class="min-w-0">
+          <p id="detalheProjeto" class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider"></p>
+          <h3 id="detalheTitulo" class="text-base font-black text-neutral-900 leading-snug"></h3>
+        </div>
+        <button type="button" onclick="fecharDetalheTarefa()" aria-label="Fechar" class="text-neutral-400 hover:text-neutral-900 text-xl leading-none px-1">&times;</button>
+      </div>
+      <div class="p-5 overflow-y-auto custom-scrollbar space-y-5">
+        <div id="detalheResumo" class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs"></div>
+        <p id="detalheDescricao" class="text-xs text-neutral-700 whitespace-pre-line"></p>
+        <div id="detalheAcoes" class="flex flex-wrap gap-2"></div>
+
+        <div>
+          <h4 class="text-xs font-black uppercase text-neutral-800 mb-2">Anotações</h4>
+          <form id="formNovaAnotacao" onsubmit="salvarAnotacao(event)" class="mb-3 space-y-2">
+            <label for="novaAnotacaoTexto" class="sr-only">Nova anotação</label>
+            <textarea id="novaAnotacaoTexto" rows="2" maxlength="4000" required placeholder="Escreva uma observação sobre esta atividade..." class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></textarea>
+            <div class="flex justify-end"><button type="submit" class="px-3 py-1.5 bg-black hover:bg-neutral-800 text-white rounded text-xs font-bold">Adicionar anotação</button></div>
+          </form>
+          <div id="detalheAnotacoes" class="space-y-2"></div>
+        </div>
+
+        <details>
+          <summary class="cursor-pointer text-xs font-black uppercase text-neutral-800 select-none">Sessões de trabalho</summary>
+          <div id="detalheSessoes" class="mt-2 text-xs"></div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pausa da atividade -->
+  <div id="modalPausa" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-[55] flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border-t-4 border-neutral-700 max-h-[92vh] overflow-y-auto">
+      <h3 class="text-base font-black text-neutral-900">Pausar atividade</h3>
+      <p class="text-xs text-neutral-500 mb-4"><strong id="pausaTituloTarefa" class="text-neutral-800"></strong></p>
+      <form onsubmit="confirmarPausa(event)" class="space-y-4">
+        <input type="hidden" id="pausaTarefaId">
+        <div>
+          <label for="pausaMotivo" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Motivo da pausa *</label>
+          <textarea id="pausaMotivo" rows="2" maxlength="4000" required placeholder="Ex: aguardando retorno do fornecedor" class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></textarea>
+        </div>
+
+        <fieldset id="pausaBlocoProxima" class="space-y-2">
+          <legend class="text-xs font-bold uppercase text-neutral-700 mb-1">Deseja iniciar outra atividade agora?</legend>
+          <div class="flex gap-4 text-xs font-semibold">
+            <label class="inline-flex items-center gap-1.5"><input type="radio" name="pausaIniciarOutra" value="sim" onchange="atualizarFormPausa()" class="accent-red-600"> Sim</label>
+            <label class="inline-flex items-center gap-1.5"><input type="radio" name="pausaIniciarOutra" value="nao" onchange="atualizarFormPausa()" class="accent-red-600"> Não</label>
+          </div>
+          <div id="pausaCampoProxima" class="hidden">
+            <label for="pausaProximaTarefa" class="block text-xs font-bold text-neutral-700 mb-1">Atividade a iniciar *</label>
+            <select id="pausaProximaTarefa" class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
+          </div>
+          <div id="pausaCampoSemProxima" class="hidden">
+            <label for="pausaMotivoSemProxima" class="block text-xs font-bold text-neutral-700 mb-1">Por que não vai iniciar outra atividade agora? *</label>
+            <textarea id="pausaMotivoSemProxima" rows="2" maxlength="4000" placeholder="Ex: reunião com a gestão, fim do expediente, almoço" class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></textarea>
+          </div>
+        </fieldset>
+        <p id="pausaSemOpcoes" class="hidden text-[11px] text-neutral-500">Não há outras atividades a fazer ou em pausa para este responsável.</p>
+
+        <div class="flex justify-end space-x-2 pt-3 border-t border-neutral-100">
+          <button type="button" onclick="fecharModalPausa()" class="px-3 py-1.5 border rounded text-xs font-bold">Cancelar</button>
+          <button type="submit" class="px-4 py-1.5 bg-neutral-800 hover:bg-black text-white rounded text-xs font-bold">Confirmar pausa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Diálogo genérico de confirmação / motivo -->
+  <div id="modalDialogo" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-[58] flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border-t-4 border-red-600">
+      <h3 id="dialogoTitulo" class="text-base font-black text-neutral-900 mb-2"></h3>
+      <p id="dialogoMensagem" class="text-xs text-neutral-600 mb-4 whitespace-pre-line"></p>
+      <div id="dialogoBlocoSelecao" class="hidden mb-4">
+        <label id="dialogoRotuloSelecao" for="dialogoSelecao" class="block text-xs font-bold uppercase text-neutral-700 mb-1"></label>
+        <select id="dialogoSelecao" class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
+      </div>
+      <div id="dialogoBlocoTexto" class="hidden mb-4">
+        <label id="dialogoRotuloTexto" for="dialogoTexto" class="block text-xs font-bold uppercase text-neutral-700 mb-1"></label>
+        <textarea id="dialogoTexto" rows="3" maxlength="4000" class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></textarea>
+      </div>
+      <div id="dialogoBotoes" class="flex flex-wrap justify-end gap-2 pt-3 border-t border-neutral-100"></div>
+    </div>
+  </div>
+
+  <div id="modalNovaTarefa" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl border-t-4 border-red-600 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-base font-black text-neutral-900">Nova Atividade</h3>
+      <p id="subtituloModalNovaTarefa" class="text-xs text-neutral-500 mb-4">Preencha os dados e escolha o responsável.</p>
+      <form onsubmit="salvarNovaTarefa(event)" class="space-y-3">
+        <div>
+          <label for="novaTarTitulo" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Título *</label>
+          <input type="text" id="novaTarTitulo" maxlength="200" placeholder="Ex: Arte do post de lançamento" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
+        </div>
+        <div>
+          <label for="novaTarDescricao" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Descrição</label>
+          <textarea id="novaTarDescricao" rows="2" placeholder="Detalhes, referências, links..." class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></textarea>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="novaTarProjeto" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Projeto *</label>
+            <select id="novaTarProjeto" onchange="atualizarPilaresNovaTarefa()" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
+          </div>
+          <div>
+            <label for="novaTarPilar" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Pilar *</label>
+            <select id="novaTarPilar" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="novaTarResponsavel" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Responsável *</label>
+            <select id="novaTarResponsavel" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
+          </div>
+          <div>
+            <label for="novaTarPrazo" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Prazo *</label>
+            <input type="date" id="novaTarPrazo" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="novaTarPrioridade" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Prioridade *</label>
+            <select id="novaTarPrioridade" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
+              <option value="Baixa">Baixa</option>
+              <option value="Média" selected>Média</option>
+              <option value="Alta">Alta</option>
+              <option value="Urgente">Urgente</option>
+            </select>
+          </div>
+          <div>
+            <label for="novaTarHorasPrevistas" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Tempo estimado (h) *</label>
+            <input type="number" step="0.5" min="0.5" id="novaTarHorasPrevistas" placeholder="Ex: 4" required class="w-full border border-neutral-300 rounded p-2 text-xs font-bold outline-none focus:ring-2 focus:ring-red-600">
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t border-neutral-100"><button type="button" onclick="fecharModalNovaTarefa()" class="px-3 py-1.5 border rounded text-xs font-bold">Cancelar</button><button type="submit" class="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold">Salvar Atividade</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalNovoProjeto" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-3xl w-full p-6 shadow-2xl border-t-4 border-red-600 max-h-[92vh] overflow-y-auto">
+      <h3 class="text-base font-black text-neutral-900">Novo Projeto Estratégico</h3>
+      <p class="text-xs text-neutral-500 mb-4">Defina o nome e os KPIs que vão medir o sucesso do projeto. Você pode incluir quantos KPIs quiser — agora ou depois.</p>
+      <form onsubmit="salvarNovoProjeto(event)" class="space-y-4">
+        <div>
+          <label for="novoProjetoNome" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Nome do projeto *</label>
+          <input type="text" id="novoProjetoNome" maxlength="200" placeholder="Ex: Campanha Dia do Mecânico" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
+        </div>
+        <div>
+          <p class="text-xs font-bold uppercase text-neutral-700 mb-1">KPIs do projeto</p>
+          <div id="novoProjetoKpis" class="space-y-2"></div>
+          <button type="button" onclick="kpiAdicionarLinha('novoProjetoKpis')" class="mt-2 px-3 py-1.5 border border-dashed border-neutral-400 rounded text-xs font-bold text-neutral-700 hover:bg-neutral-50 w-full">＋ Adicionar KPI</button>
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t border-neutral-100"><button type="button" onclick="fecharModalNovoProjeto()" class="px-3 py-1.5 border rounded text-xs font-bold">Cancelar</button><button type="submit" class="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold">Criar projeto</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalNovoPilar" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-neutral-300">
+      <h3 class="text-base font-black text-neutral-900 mb-1">Novo Pilar de Investimento</h3>
+      <p class="text-xs text-neutral-500 mb-2">Projeto: <strong id="modalPilarNomeProjeto" class="text-red-600"></strong></p>
+      <form onsubmit="salvarNovoPilar(event)" class="space-y-3">
+        <input type="hidden" id="modalPilarProjetoId">
+        <input type="text" id="novoPilarNome" placeholder="Nome do Pilar" required class="w-full border rounded p-2 text-xs outline-none">
+        <input type="number" step="0.01" min="1" id="novoPilarValor" placeholder="Budget Orçado (R$)" required class="w-full border rounded p-2 text-xs outline-none">
+        <div class="flex justify-end space-x-2 pt-2"><button type="button" onclick="fecharModalNovoPilar()" class="px-3 py-1.5 border rounded text-xs">Cancelar</button><button type="submit" class="px-4 py-1.5 bg-red-600 text-white rounded text-xs font-bold">Salvar Pilar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalNovoUsuario" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-neutral-300">
+      <h3 class="text-base font-black text-neutral-900 mb-2">Cadastrar Membro da Equipe</h3>
+      <form onsubmit="salvarNovoUsuarioDireto(event)" class="space-y-3">
+        <input type="text" id="usrNome" placeholder="Nome Completo" required class="w-full border rounded p-2 text-xs outline-none">
+        <input type="email" id="usrEmail" placeholder="E-mail Corporativo" required class="w-full border rounded p-2 text-xs outline-none">
+        <input type="text" id="usrCargo" placeholder="Cargo" required class="w-full border rounded p-2 text-xs outline-none">
+        <select id="usrContrato" required class="w-full border rounded p-2 text-xs outline-none">
+          <option value="CLT">CLT</option><option value="PJ">PJ</option><option value="Freelancer">Freelancer</option><option value="Estagiário">Estagiário</option><option value="Menor Aprendiz">Menor Aprendiz</option>
+        </select>
+        <select id="usrRole" required class="w-full border rounded p-2 text-xs outline-none font-bold">
+          <option value="colaborador">Perfil: Colaborador</option>
+          <option value="gestor">Perfil: Gestor</option>
+          <option value="diretoria">Perfil: Visão Geral (Diretoria)</option>
+        </select>
+        <div class="flex justify-end space-x-2 pt-2"><button type="button" onclick="fecharModalNovoUsuario()" class="px-3 py-1.5 border rounded text-xs">Cancelar</button><button type="submit" class="px-4 py-1.5 bg-red-600 text-white rounded text-xs font-bold">Salvar Usuário</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalSolicitarCadastro" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border-t-4 border-red-600">
+      <h3 class="text-lg font-black text-neutral-900 mb-1">Solicitar Cadastro</h3>
+      <p class="text-xs text-neutral-500 mb-4">Cadastre seus dados e aguarde a liberação do acesso pelo gestor.</p>
+      <form onsubmit="enviarSolicitacaoCadastro(event)" class="space-y-3">
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Nome Completo *</label><input type="text" id="solNome" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">E-mail Corporativo *</label><input type="email" id="solEmail" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Senha *</label><input type="password" id="solSenha" minlength="8" autocomplete="new-password" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Cargo *</label><input type="text" id="solCargo" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div>
+          <label class="block text-xs font-bold text-neutral-700 mb-1">Modelo de Contratação *</label>
+          <select id="solContrato" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none font-semibold">
+            <option value="CLT">CLT</option><option value="PJ">PJ</option><option value="Freelancer">Freelancer</option><option value="Estagiário">Estagiário</option><option value="Menor Aprendiz">Menor Aprendiz</option>
+          </select>
+        </div>
+        <div class="flex justify-end space-x-2 pt-2 border-t"><button type="button" onclick="fecharModalSolicitacao()" class="px-3 py-1.5 border rounded text-xs font-bold">Cancelar</button><button type="submit" class="px-4 py-1.5 bg-red-600 text-white rounded text-xs font-black shadow">Enviar Solicitação</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalRedefinirSenha" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl border-t-4 border-red-600">
+      <h3 class="text-base font-black text-neutral-900 mb-2">Definir nova senha</h3>
+      <form onsubmit="salvarNovaSenha(event)" class="space-y-3">
+        <input type="password" id="novaSenha" minlength="8" autocomplete="new-password" placeholder="Nova senha (mínimo 8 caracteres)" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none">
+        <input type="password" id="confirmarNovaSenha" minlength="8" autocomplete="new-password" placeholder="Confirme a nova senha" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none">
+        <button type="submit" class="w-full py-2.5 bg-red-600 text-white rounded text-xs font-black">Salvar nova senha</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalEstouro" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-xl w-full p-6 shadow-2xl border-2 border-red-600">
+      <h3 class="text-lg font-black text-red-600 mb-2">Aviso de Estouro de Orçamento</h3>
+      <div class="bg-neutral-50 border p-3 rounded text-xs space-y-1 mb-3">
+        <p><strong>Projeto:</strong> <span id="modalEstouroProjeto"></span></p>
+        <p><strong>Pilar:</strong> <span id="modalEstouroPilar"></span></p>
+        <p><strong>Déficit Gerado:</strong> <span id="modalEstouroDeficit" class="text-red-700 font-bold"></span></p>
+      </div>
+      <div class="border p-3 rounded mb-3 bg-neutral-50">
+        <label class="block text-xs font-bold mb-1">Realocar de Pilar Doador:</label>
+        <select id="modalSelectOrigem" class="w-full border rounded p-1.5 text-xs mb-2"></select>
+        <button onclick="confirmarRealocacaoEGravar()" class="px-3 py-1.5 bg-black text-white rounded text-xs font-bold">Aprovar Realocação & Salvar</button>
+      </div>
+      <div class="border border-red-200 p-3 rounded mb-3 bg-red-50/50">
+        <button onclick="confirmarGastoComEstouro()" class="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-bold">Assumir Déficit & Gravar com Estouro</button>
+      </div>
+      <div class="text-right"><button onclick="fecharModalEstouro()" class="text-xs text-neutral-500 font-bold">Cancelar</button></div>
+    </div>
+  </div>
+
+  <!-- NOTIFICAÇÕES -->
+  <div id="toast-area" class="fixed bottom-4 right-4 left-4 sm:left-auto z-[60] space-y-2 sm:max-w-sm" aria-live="polite"></div>
+
+  <!-- JAVASCRIPT MASTER DE CORREÇÃO -->
+  <script>
+    // DADOS PADRÃO E LISTAS INSTITUCIONAIS
+    const PROJETOS_PADRAO = [
+      { id: "10000000-0000-4000-8000-000000000001", nome: "Arquitetura de Marca e Universo de Soluções", pilares: [{ id: "20000000-0000-4000-8000-000000000001", nome: "Construção de Provas e Lâminas Gráficas", orcado: 20000 }, { id: "20000000-0000-4000-8000-000000000002", nome: "Construção e Confecção de Catálogo Híbrido", orcado: 50000 }] },
+      { id: "10000000-0000-4000-8000-000000000002", nome: "Carro 50 anos", pilares: [{ id: "20000000-0000-4000-8000-000000000003", nome: "Restauração e Preparação Veicular", orcado: 45000 }] },
+      { id: "10000000-0000-4000-8000-000000000003", nome: "Lançamentos", pilares: [{ id: "20000000-0000-4000-8000-000000000004", nome: "Campanhas de Introdução de Novos Produtos", orcado: 60000 }] },
+      { id: "10000000-0000-4000-8000-000000000004", nome: "Softwares e Recorrências", pilares: [{ id: "20000000-0000-4000-8000-000000000005", nome: "Plataformas SaaS de Marketing e CRM", orcado: 65000 }] }
+    ];
+
+    const TIPOS_DE_GASTO = [
+      "Ações de Ativação em Distribuidores", "Bancos de Imagens e Vetores", "Bonés", "Brindes",
+      "Buffet e Coffe Breaks", "Cachê - Influenciadores / Criadores", "Campanha - WhatsApp (Callsys)",
+      "Equipamentos - Audiovisual", "Estandes (feiras e Eventos Externos)", "Gráfica (folhetos, lâminas, flyers, banners, etc...)",
+      "Hospedagem", "Locação - Decoração e Cenografia", "Locação - Espaço para Eventos", "Locação - Euipamentos de Audiovisual",
+      "Locação - Mobilia", "Locação - Veículos", "Locuções e Trilhas Sonoras", "Logística e Envio (Fretes de Marketing)",
+      "Materiais de PDV (Expositores)", "Passagem Aérea", "Premiações - Balconistas e Mecânicos",
+      "Premiações - Endormarketing", "Premiações - Vendedores", "Produção de Conteúdo (Terceirizados)",
+      "Produtoras (Vídeo / Áudio)", "Recursos Humanos (Estimado)", "Refeiçoes (externas do time)",
+      "Softwares (SaaS)", "Tráfego Pago - Influenciadores", "Tráfego Pago - MercadoLivre",
+      "Tráfego Pago - Meta Ads", "Tráfego Pago - Shopee", "Tráfego Pago - TikTok Ads",
+      "Tráfego Pago - YouTube Ads", "Uniformes e Camisetas", "Transporte por Aplicativo",
+      "Manutenções Veiculares (Carros de Exposição)"
+    ];
+
+    const SUPABASE_URL = "https://jtcxzbwjilqgsavuhjdr.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lg4UNHd-1ANfLOP5vL_RWQ_hOVmCZrQ";
+    const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    let usuarios = [];
+    let projetos = [];
+    let gastos = [];
+    let realocacoes = [];
+    let tarefas = [];
+    let tiposGasto = [];
+    let usuarioLogado = null;
+    let chartMinhasTarefas = null;
+    let chartAndamentoGeral = null;
+    let chartProjetosGestor = null;
+    let chartCategoriasGestor = null;
+    let gastoPendenteEstouro = null;
+    let equipeAtribuivel = [];
+    let sessoes = [];
+    let sessoesDisponiveis = false;
+
+    // ===== HORAS POR QUEM EXECUTOU =====
+    // As horas de uma atividade pertencem a quem trabalhou em cada sessão, não ao responsável atual.
+    // Ex.: Rayane trabalhou 3h e a atividade foi transferida para Natália → 3h ficam com Rayane.
+    function duracaoSessaoHoras(s, desde = null, ate = null) {
+      const ini = Math.max(Date.parse(s.inicio), desde ? desde.getTime() : -Infinity);
+      const fim = Math.min(s.fim ? Date.parse(s.fim) : Date.now(), ate ? ate.getTime() : Infinity);
+      return Math.max(0, fim - ini) / 3600000;
+    }
+
+    // Map colaboradorId → horas trabalhadas nas atividades informadas
+    function horasPorExecutor(listaTarefas) {
+      const mapa = new Map();
+      const soma = (id, h) => { if (h > 0) mapa.set(id, (mapa.get(id) || 0) + h); };
+      listaTarefas.forEach(t => {
+        const doTarefa = sessoesDisponiveis ? sessoes.filter(s => s.tarefaId === t.id) : [];
+        let registrado = 0;
+        doTarefa.forEach(s => { const h = duracaoSessaoHoras(s); registrado += h; soma(s.colaboradorId, h); });
+        // Horas sem sessão correspondente (ex.: lançamentos antigos) ficam com o responsável atual
+        // (tolerância de 0,01h por causa do arredondamento do total gravado no banco)
+        const residual = t.tempo_gasto - registrado;
+        if (residual > 0.01) soma(t.colaboradorId, residual);
+      });
+      return mapa;
+    }
+
+    // Valores aceitos pela restrição tarefas_status_check do banco (rótulo = texto exibido)
+    const STATUS_TAREFA = [
+      { valor: 'A Fazer', rotulo: 'A Fazer', cor: '#a1a1aa', coluna: 'afazer' },
+      { valor: 'Em Produção', rotulo: 'Em Produção', cor: '#dc2626', coluna: 'producao' },
+      { valor: 'Em Pausa', rotulo: 'Em Pausa', cor: '#3f3f46', coluna: 'pausa' },
+      { valor: 'Aprovação', rotulo: 'Em Aprovação', cor: '#f59e0b', coluna: 'aprovacao' },
+      { valor: 'Concluído', rotulo: 'Concluído', cor: '#10b981', coluna: 'concluido' }
+    ];
+    const CORES_PRIORIDADE = {
+      'Baixa': 'bg-neutral-200 text-neutral-700',
+      'Média': 'bg-amber-100 text-amber-800',
+      'Alta': 'bg-orange-200 text-orange-900',
+      'Urgente': 'bg-red-600 text-white'
+    };
+
+    function rotuloStatus(valor) {
+      const s = STATUS_TAREFA.find(x => x.valor === valor);
+      return s ? s.rotulo : valor;
+    }
+
+    // Data local no formato AAAA-MM-DD (toISOString usa UTC e "pula" o dia após as 21h no Brasil)
+    function dataLocalISO(d = new Date()) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function notificar(texto, tipo = 'sucesso') {
+      const area = document.getElementById('toast-area');
+      const el = document.createElement('div');
+      el.className = `text-white text-xs font-semibold px-4 py-3 rounded-lg shadow-lg border-l-4 ${tipo === 'erro' ? 'bg-red-700 border-red-950' : 'bg-neutral-900 border-emerald-400'}`;
+      el.setAttribute('role', tipo === 'erro' ? 'alert' : 'status');
+      el.textContent = texto;
+      area.appendChild(el);
+      setTimeout(() => el.remove(), tipo === 'erro' ? 8000 : 3500);
+    }
+
+    function mensagemErro(error) {
+      if (!error) return 'Erro desconhecido.';
+      const msg = error.message || String(error);
+      if (error.code === '23505') return 'Já existe um registro com esse nome ou e-mail.';
+      if (error.code === '23503') return 'Projeto, pilar ou responsável não encontrado.';
+      if (error.code === '23514') return `Valor não aceito pelo banco (${msg}).`;
+      if (/row-level security|permission denied/i.test(msg)) return 'Seu perfil não tem permissão para esta gravação.';
+      if (error.code === 'PGRST202' || error.code === '42P01' || error.code === 'PGRST205' || /could not find the (function|table)/i.test(msg)) {
+        return 'O banco ainda não foi atualizado para esta função. Execute a migração 20261108_fluxo_execucao_anotacoes.sql no SQL Editor do Supabase.';
+      }
+      return msg;
+    }
+
+    // Desabilita o botão de envio enquanto salva (evita gravação em dobro)
+    async function comBotaoOcupado(e, acao) {
+      const btn = e && e.submitter;
+      const textoOriginal = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; btn.classList.add('opacity-60', 'cursor-wait'); }
+      try {
+        return await acao();
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = textoOriginal; btn.classList.remove('opacity-60', 'cursor-wait'); }
+      }
+    }
+
+    // Recarrega tudo do banco após uma gravação para a tela refletir o estado real
+    async function recarregarDados() {
+      try {
+        await carregarDadosAplicacao();
+      } catch (erro) {
+        notificar(`Gravado, mas não foi possível atualizar a tela: ${mensagemErro(erro)}`, 'erro');
+      }
+      atualizarTodaAplicacao();
+      if (usuarioLogado.role === 'colaborador' && !document.getElementById('colab-tela-dashboard').classList.contains('hidden')) {
+        renderizarDashboardColaborador();
+      }
+      renderizarKanbanGeral();
+    }
+
+    // Link de "Esqueci a senha": o Supabase volta com #...&type=recovery (ou #error=... se expirou)
+    const parametrosRetornoAuth = new URLSearchParams(window.location.hash.slice(1));
+    let linkDeRecuperacao = parametrosRetornoAuth.get('type') === 'recovery';
+    const erroRetornoAuth = parametrosRetornoAuth.get('error_description') || parametrosRetornoAuth.get('error');
+
+    // Endereço limpo da página (sem #tokens) para usar nos redirecionamentos de e-mail
+    function urlDaAplicacao() {
+      return `${window.location.origin}${window.location.pathname}`;
+    }
+
+    function abrirModalRedefinirSenha() {
+      document.getElementById('tela-login').classList.add('hidden');
+      document.getElementById('modalRedefinirSenha').classList.remove('hidden');
+      document.getElementById('novaSenha').focus();
+    }
+
+    clienteSupabase.auth.onAuthStateChange(evento => {
+      if (evento === 'PASSWORD_RECOVERY') {
+        linkDeRecuperacao = true;
+        abrirModalRedefinirSenha();
+      }
+    });
+
+    async function consultarTabela(nome, colunas = '*') {
+      const { data, error } = await clienteSupabase.from(nome).select(colunas);
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function garantirDadosBasicos() {
+      if (usuarioLogado.role !== 'gestor') return;
+
+      const [linhasProjetos, linhasTipos] = await Promise.all([
+        consultarTabela('projetos', 'id'),
+        consultarTabela('tipos_gasto', 'id,nome')
+      ]);
+
+      if (linhasProjetos.length === 0) {
+        const novosProjetos = PROJETOS_PADRAO.map(p => ({
+          id: p.id,
+          nome: p.nome,
+          ano_exercicio: new Date().getFullYear()
+        }));
+        const novosPilares = PROJETOS_PADRAO.flatMap(p => p.pilares.map(pilar => ({
+          id: pilar.id,
+          projeto_id: p.id,
+          nome: pilar.nome,
+          valor_orcado: pilar.orcado
+        })));
+        const { error: erroProjetos } = await clienteSupabase.from('projetos').insert(novosProjetos);
+        if (erroProjetos) throw erroProjetos;
+        const { error: erroPilares } = await clienteSupabase.from('pilares_investimento').insert(novosPilares);
+        if (erroPilares) throw erroPilares;
+      }
+
+      const nomesExistentes = new Set(linhasTipos.map(t => t.nome));
+      const tiposNovos = TIPOS_DE_GASTO.filter(nome => !nomesExistentes.has(nome)).map(nome => ({ nome }));
+      if (tiposNovos.length > 0) {
+        const { error } = await clienteSupabase.from('tipos_gasto').insert(tiposNovos);
+        if (error) throw error;
+      }
+    }
+
+    async function carregarDadosAplicacao() {
+      await garantirDadosBasicos();
+      const podeVerFinanceiro = usuarioLogado.role !== 'colaborador';
+      const podeAtribuirTarefas = usuarioLogado.role !== 'diretoria';
+      const [linhasUsuarios, linhasProjetos, linhasPilares, linhasGastos, linhasRealocacoes, linhasTarefas, linhasTipos, linhasEquipe, linhasSessoes] = await Promise.all([
+        consultarTabela('usuarios'),
+        consultarTabela('projetos'),
+        podeVerFinanceiro ? consultarTabela('pilares_investimento') : consultarTabela('pilares_publicos'),
+        podeVerFinanceiro ? consultarTabela('lancamentos_gastos') : Promise.resolve([]),
+        podeVerFinanceiro ? consultarTabela('realocacoes_orcamento') : Promise.resolve([]),
+        consultarTabela('tarefas'),
+        podeVerFinanceiro ? consultarTabela('tipos_gasto') : Promise.resolve([]),
+        podeAtribuirTarefas
+          ? clienteSupabase.rpc('listar_equipe_atribuivel').then(({ data, error }) => { if (error) throw error; return data || []; })
+          : Promise.resolve([]),
+        // Sessões de trabalho: base para atribuir horas a quem executou (mesmo após transferência)
+        clienteSupabase.from('tarefa_sessoes').select('tarefa_id,colaborador_id,inicio,fim')
+          .then(({ data, error }) => { sessoesDisponiveis = !error; return error ? [] : (data || []); })
+      ]);
+      equipeAtribuivel = linhasEquipe;
+      sessoes = linhasSessoes.map(s => ({ tarefaId: s.tarefa_id, colaboradorId: s.colaborador_id, inicio: s.inicio, fim: s.fim }));
+      // KPIs dos projetos (gestão e diretoria) — kpis.js
+      if (typeof kpiCarregar === 'function') await kpiCarregar();
+
+      usuarios = linhasUsuarios.map(u => ({ ...u, role: u.role === 'admin' ? 'gestor' : u.role }));
+      const tipoPorId = new Map(linhasTipos.map(t => [t.id, t.nome]));
+      projetos = linhasProjetos.map(p => ({
+        id: p.id,
+        nome: p.nome,
+        pilares: linhasPilares.filter(pilar => pilar.projeto_id === p.id).map(pilar => ({
+          id: pilar.id,
+          nome: pilar.nome,
+          orcado: Number(pilar.valor_orcado || 0)
+        }))
+      }));
+      tiposGasto = [...linhasTipos].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      gastos = linhasGastos.map(g => {
+        const pilar = linhasPilares.find(p => p.id === g.pilar_id);
+        return {
+          id: g.id,
+          data: g.data_gasto,
+          projetoId: pilar ? pilar.projeto_id : '',
+          pilarId: g.pilar_id,
+          tipo: tipoPorId.get(g.tipo_gasto_id) || '',
+          fornecedor: g.fornecedor,
+          formaPgto: g.forma_pagamento,
+          descricao: g.descricao,
+          valor: Number(g.valor || 0)
+        };
+      });
+      realocacoes = linhasRealocacoes.map(r => {
+        const pilarOrigem = linhasPilares.find(p => p.id === r.pilar_origem_id);
+        const pilarDestino = linhasPilares.find(p => p.id === r.pilar_destino_id);
+        const projetoOrigem = linhasProjetos.find(p => p.id === (pilarOrigem && pilarOrigem.projeto_id));
+        const projetoDestino = linhasProjetos.find(p => p.id === (pilarDestino && pilarDestino.projeto_id));
+        return {
+          id: r.id,
+          dataHora: r.criado_em ? new Date(r.criado_em).toLocaleString('pt-BR') : '',
+          criadoEm: r.criado_em || null,
+          origem: `${projetoOrigem ? projetoOrigem.nome : ''} / ${pilarOrigem ? pilarOrigem.nome : ''}`,
+          destino: `${projetoDestino ? projetoDestino.nome : ''} / ${pilarDestino ? pilarDestino.nome : ''}`,
+          origemProjetoId: projetoOrigem ? projetoOrigem.id : '',
+          origemPilarId: r.pilar_origem_id,
+          destinoProjetoId: projetoDestino ? projetoDestino.id : '',
+          destinoPilarId: r.pilar_destino_id,
+          motivo: r.justificativa,
+          valor: Number(r.valor || 0)
+        };
+      });
+      tarefas = linhasTarefas.map(t => ({
+        id: t.id,
+        titulo: t.titulo,
+        descricao: t.descricao || '',
+        projetoId: t.projeto_id,
+        pilarId: t.pilar_id,
+        colaboradorId: t.colaborador_id,
+        prazo: t.prazo_entrega,
+        criadoEm: t.criado_em || null,
+        tempo_estimado: Number(t.tempo_estimado || 0),
+        tempoGastoRegistrado: Number(t.tempo_gasto || 0),
+        sessaoIniciadaEm: t.sessao_iniciada_em || null,
+        iniciadoEm: t.iniciado_em || null,
+        concluidoEm: t.concluido_em || null,
+        // Horas consumidas = sessões encerradas (banco) + sessão em andamento (cronômetro)
+        get tempo_gasto() {
+          const emAndamento = this.sessaoIniciadaEm ? Math.max(0, Date.now() - Date.parse(this.sessaoIniciadaEm)) / 3600000 : 0;
+          return this.tempoGastoRegistrado + emAndamento;
+        },
+        prioridade: t.prioridade,
+        slaCumprido: t.sla_cumprido,
+        status: t.status
+      }));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      popularSelects();
+      verificarSessao();
+    });
+
+    async function verificarSessao() {
+      const telaLogin = document.getElementById('tela-login');
+      const appPrincipal = document.getElementById('app-principal');
+      const { data, error } = await clienteSupabase.auth.getSession();
+
+      if (error) {
+        alert(`Não foi possível verificar a sessão: ${error.message}`);
+        return;
+      }
+
+      if (erroRetornoAuth) {
+        history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+        notificar(`O link do e-mail é inválido ou expirou (${erroRetornoAuth.replace(/\+/g, ' ')}). Peça um novo em "Esqueci a senha".`, 'erro');
+      }
+
+      if (!data.session) {
+        usuarioLogado = null;
+        telaLogin.classList.remove('hidden');
+        appPrincipal.classList.add('hidden');
+        return;
+      }
+
+      // Veio do link de recuperação: pede a nova senha antes de abrir a plataforma
+      if (linkDeRecuperacao) {
+        appPrincipal.classList.add('hidden');
+        abrirModalRedefinirSenha();
+        return;
+      }
+
+      const { data: perfil, error: erroPerfil } = await clienteSupabase
+        .from('usuarios')
+        .select('*')
+        .eq('auth_uid', data.session.user.id)
+        .maybeSingle();
+
+      if (erroPerfil || !perfil) {
+        await clienteSupabase.auth.signOut();
+        alert(erroPerfil ? `Não foi possível carregar o perfil: ${erroPerfil.message}` : 'Perfil de acesso não encontrado.');
+        telaLogin.classList.remove('hidden');
+        appPrincipal.classList.add('hidden');
+        return;
+      }
+
+      if (perfil.status !== 'ativo') {
+        await clienteSupabase.auth.signOut();
+        alert('Seu acesso está aguardando liberação da gerência.');
+        telaLogin.classList.remove('hidden');
+        appPrincipal.classList.add('hidden');
+        return;
+      }
+
+      usuarioLogado = { ...perfil, role: perfil.role === 'admin' ? 'gestor' : perfil.role };
+      try {
+        await carregarDadosAplicacao();
+      } catch (erro) {
+        await clienteSupabase.auth.signOut();
+        alert(`Não foi possível carregar os dados: ${erro.message}`);
+        telaLogin.classList.remove('hidden');
+        appPrincipal.classList.add('hidden');
+        return;
+      }
+      telaLogin.classList.add('hidden');
+      appPrincipal.classList.remove('hidden');
+      aplicarRegrasPerfil();
+    }
+
+    async function executarLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const senha = document.getElementById('loginSenha').value;
+      const { error } = await clienteSupabase.auth.signInWithPassword({ email, password: senha });
+      if (error) {
+        alert(`Não foi possível entrar: ${error.message}`);
+        return;
+      }
+      await verificarSessao();
+    }
+
+    async function solicitarRecuperacaoSenha() {
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      if (!email) {
+        alert('Informe seu e-mail para receber o link de recuperação.');
+        return;
+      }
+      if (window.location.protocol === 'file:') {
+        alert('Abra a plataforma pelo servidor (iniciar-servidor.cmd → http://localhost:8000) para que o link do e-mail funcione.');
+        return;
+      }
+      const { error } = await clienteSupabase.auth.resetPasswordForEmail(email, { redirectTo: urlDaAplicacao() });
+      if (error) {
+        alert(`Não foi possível enviar o link: ${error.message}`);
+        return;
+      }
+      alert('Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha.');
+    }
+
+    async function salvarNovaSenha(e) {
+      e.preventDefault();
+      const senha = document.getElementById('novaSenha').value;
+      const confirmacao = document.getElementById('confirmarNovaSenha').value;
+      if (senha !== confirmacao) {
+        alert('As senhas não conferem.');
+        return;
+      }
+      const { error } = await clienteSupabase.auth.updateUser({ password: senha });
+      if (error) {
+        alert(`Não foi possível atualizar a senha: ${error.message}`);
+        return;
+      }
+      document.getElementById('modalRedefinirSenha').classList.add('hidden');
+      document.querySelector('#modalRedefinirSenha form').reset();
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      linkDeRecuperacao = false;
+      notificar('Senha atualizada com sucesso.');
+      await verificarSessao();
+    }
+
+    async function executarLogout() {
+      await clienteSupabase.auth.signOut();
+      usuarioLogado = null;
+      usuarios = [];
+      projetos = [];
+      gastos = [];
+      realocacoes = [];
+      tarefas = [];
+      verificarSessao();
+    }
+
+    // REGRA DE PERFIS CORRIGIDA (GESTOR, DIRETORIA E COLABORADOR)
+    function aplicarRegrasPerfil() {
+      document.getElementById('labelUsuarioNome').textContent = usuarioLogado.nome;
+      document.getElementById('labelUsuarioCargo').textContent = usuarioLogado.cargo;
+
+      const navColab = document.getElementById('nav-colaborador');
+      const navGestor = document.getElementById('nav-gestor');
+
+      const contColab = document.getElementById('container-colaborador');
+      const contGestao = document.getElementById('container-gestao-diretoria');
+      const tagBadge = document.getElementById('tagPerfilBadge');
+
+      // Reset de visibilidade
+      navColab.classList.add('hidden');
+      navGestor.classList.add('hidden');
+      contColab.classList.add('hidden');
+      contGestao.classList.add('hidden');
+
+      if (usuarioLogado.role === 'colaborador') {
+        tagBadge.textContent = "Colaborador";
+        tagBadge.className = "text-neutral-300 font-bold uppercase";
+        document.getElementById('subtituloPerfilHeader').textContent = "Portal do Colaborador";
+        navColab.classList.remove('hidden');
+        contColab.classList.remove('hidden');
+        navegarColaborador('dashboard');
+      } else if (usuarioLogado.role === 'gestor') {
+        tagBadge.textContent = "Gestor Geral";
+        tagBadge.className = "text-red-600 font-black uppercase";
+        document.getElementById('subtituloPerfilHeader').textContent = "Gestão Operacional e Orçamentária";
+        navGestor.classList.remove('hidden');
+        contGestao.classList.remove('hidden');
+        
+        // Habilita as ações de edição
+        document.getElementById('btnGestorCriarTarefa').classList.remove('hidden');
+        document.getElementById('btnGestorCriarProjeto').classList.remove('hidden');
+        document.getElementById('btnCadastrarUsuario').classList.remove('hidden');
+        navegarGestor('budget');
+      } else if (usuarioLogado.role === 'diretoria') {
+        tagBadge.textContent = "Diretoria (Apenas Visualização)";
+        tagBadge.className = "text-emerald-500 font-black uppercase";
+        document.getElementById('subtituloPerfilHeader').textContent = "Acompanhamento Executivo";
+        navGestor.classList.remove('hidden');
+        contGestao.classList.remove('hidden');
+        
+        // Oculta os botões de edição para a diretoria, mantendo apenas a leitura das abas
+        document.getElementById('btnGestorCriarTarefa').classList.add('hidden');
+        document.getElementById('btnGestorCriarProjeto').classList.add('hidden');
+        document.getElementById('btnCadastrarUsuario').classList.add('hidden');
+        navegarGestor('budget');
+      }
+
+      atualizarTodaAplicacao();
+    }
+
+    // INTERFACE DO COLABORADOR
+    function navegarColaborador(tela) {
+      document.getElementById('colab-tela-dashboard').classList.add('hidden');
+      document.getElementById('colab-tela-kanban').classList.add('hidden');
+
+      document.getElementById('btnColabDash').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+      document.getElementById('btnColabKanban').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+
+      if (tela === 'dashboard') {
+        document.getElementById('colab-tela-dashboard').classList.remove('hidden');
+        document.getElementById('btnColabDash').className = "px-3 py-1.5 rounded bg-red-600 text-white";
+        renderizarDashboardColaborador();
+      } else {
+        document.getElementById('colab-tela-kanban').classList.remove('hidden');
+        document.getElementById('btnColabKanban').className = "px-3 py-1.5 rounded bg-red-600 text-white";
+        renderizarKanbanGeral();
+      }
+    }
+
+    // INTERFACE DO GESTOR E DIRETORIA
+    function navegarGestor(aba) {
+      document.getElementById('gestor-secao-budget').classList.add('hidden');
+      document.getElementById('gestor-secao-lancamento').classList.add('hidden');
+      document.getElementById('gestor-secao-pilares').classList.add('hidden');
+      document.getElementById('gestor-secao-equipe').classList.add('hidden');
+      document.getElementById('gestor-secao-relatorios').classList.add('hidden');
+      document.getElementById('container-colaborador').classList.add('hidden');
+
+      document.getElementById('btnGestorBudget').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+      document.getElementById('btnGestorLanc').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+      document.getElementById('btnGestorPil').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+      document.getElementById('btnGestorKanban').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+      document.getElementById('btnGestorEquipe').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+      document.getElementById('btnGestorRelatorios').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+
+      // Diretoria não acessa formulário de lançamento de gastos
+      if (usuarioLogado.role === 'diretoria') {
+        document.getElementById('btnGestorLanc').classList.add('hidden');
+      } else {
+        document.getElementById('btnGestorLanc').classList.remove('hidden');
+      }
+
+      if (aba === 'budget') {
+        document.getElementById('gestor-secao-budget').classList.remove('hidden');
+        document.getElementById('btnGestorBudget').className = "px-3 py-1.5 rounded bg-red-600 text-white";
+        setTimeout(() => renderizarGraficosGestor(), 50);
+      } else if (aba === 'lancamento') {
+        document.getElementById('gestor-secao-lancamento').classList.remove('hidden');
+        document.getElementById('btnGestorLanc').className = "px-3 py-1.5 rounded bg-red-600 text-white";
+      } else if (aba === 'pilares') {
+        document.getElementById('gestor-secao-pilares').classList.remove('hidden');
+        document.getElementById('btnGestorPil').className = "px-3 py-1.5 rounded bg-red-600 text-white";
+        renderizarEstruturaPilares();
+      } else if (aba === 'kanban_geral') {
+        document.getElementById('container-colaborador').classList.remove('hidden');
+        document.getElementById('colab-tela-dashboard').classList.add('hidden');
+        document.getElementById('colab-tela-kanban').classList.remove('hidden');
+        document.getElementById('btnGestorKanban').className = "px-3 py-1.5 rounded bg-red-600 text-white";
+        renderizarKanbanGeral();
+      } else if (aba === 'equipe') {
+        document.getElementById('gestor-secao-equipe').classList.remove('hidden');
+        document.getElementById('btnGestorEquipe').className = "px-3 py-1.5 rounded bg-red-600 text-white";
+        renderizarTabelaUsuariosEquipe();
+      } else if (aba === 'relatorios') {
+        document.getElementById('gestor-secao-relatorios').classList.remove('hidden');
+        document.getElementById('btnGestorRelatorios').className = "px-3 py-1.5 rounded bg-red-600 text-white";
+        relAbrir(); // relatorios.js
+      }
+    }
+
+    // OPERAÇÕES DO COLABORADOR
+    function renderizarDashboardColaborador() {
+      const projFiltro = document.getElementById('filtroProjetoColab').value;
+      let minhas = tarefas.filter(t => t.colaboradorId === usuarioLogado.id);
+      if (projFiltro !== 'todos') minhas = minhas.filter(t => t.projetoId === projFiltro);
+
+      const hoje = dataLocalISO();
+      const dataHoje = new Date();
+
+      const finalSemana = new Date();
+      finalSemana.setDate(dataHoje.getDate() + (7 - dataHoje.getDay()));
+      const strFinalSemana = dataLocalISO(finalSemana);
+
+      const prefixoMes = `${dataHoje.getFullYear()}-${String(dataHoje.getMonth() + 1).padStart(2, '0')}`;
+
+      let vHoje = 0, vSemana = 0, vMes = 0;
+      let hGastoHoje = 0, hPrevHoje = 0;
+      let hGastoSem = 0, hPrevSem = 0;
+      let hGastoMes = 0, hPrevMes = 0;
+
+      // Previsto: pelas atividades sob minha responsabilidade, conforme o prazo
+      minhas.forEach(t => {
+        const p = t.prazo;
+        const est = Number(t.tempo_estimado || 0);
+        if (p === hoje) { vHoje++; hPrevHoje += est; }
+        if (p >= hoje && p <= strFinalSemana) { vSemana++; hPrevSem += est; }
+        if (p.startsWith(prefixoMes)) { vMes++; hPrevMes += est; }
+      });
+
+      // Consumido: horas que EU trabalhei no período (pelas sessões), inclusive em atividades já transferidas
+      const inicioHoje = new Date(); inicioHoje.setHours(0, 0, 0, 0);
+      const inicioSemana = new Date(inicioHoje); inicioSemana.setDate(inicioHoje.getDate() - ((inicioHoje.getDay() + 6) % 7)); // segunda-feira
+      const inicioMes = new Date(inicioHoje.getFullYear(), inicioHoje.getMonth(), 1);
+      const minhasSessoes = sessoes.filter(s => s.colaboradorId === usuarioLogado.id &&
+        (projFiltro === 'todos' || (tarefas.find(t => t.id === s.tarefaId) || {}).projetoId === projFiltro));
+      minhasSessoes.forEach(s => {
+        hGastoHoje += duracaoSessaoHoras(s, inicioHoje);
+        hGastoSem += duracaoSessaoHoras(s, inicioSemana);
+        hGastoMes += duracaoSessaoHoras(s, inicioMes);
+      });
+
+      document.getElementById('colab-kpi-hoje').textContent = vHoje;
+      document.getElementById('colab-kpi-semana').textContent = vSemana;
+      document.getElementById('colab-kpi-mes').textContent = vMes;
+      document.getElementById('colab-kpi-total').textContent = minhas.length;
+
+      const saldoDia = 8 - hPrevHoje;
+      const saldoSem = 40 - hPrevSem;
+      const saldoMes = 160 - hPrevMes;
+
+      document.getElementById('colab-horas-hoje-gasto').textContent = fmtHoras(hGastoHoje);
+      document.getElementById('colab-horas-hoje-previsto').textContent = fmtHoras(hPrevHoje);
+      document.getElementById('colab-horas-hoje-saldo').textContent = fmtHoras(saldoDia);
+      document.getElementById('colab-horas-hoje-status').textContent = saldoDia >= 0 ? "Disponível" : "Sobrecarga!";
+      document.getElementById('colab-horas-hoje-status').className = saldoDia >= 0 ? "text-emerald-700 font-bold" : "text-red-700 font-black";
+
+      document.getElementById('colab-horas-sem-gasto').textContent = fmtHoras(hGastoSem);
+      document.getElementById('colab-horas-sem-previsto').textContent = fmtHoras(hPrevSem);
+      document.getElementById('colab-horas-sem-saldo').textContent = fmtHoras(saldoSem);
+      document.getElementById('colab-horas-sem-status').textContent = saldoSem >= 0 ? "Disponível" : "Sobrecarga!";
+      document.getElementById('colab-horas-sem-status').className = saldoSem >= 0 ? "text-emerald-700 font-bold" : "text-red-700 font-black";
+
+      document.getElementById('colab-horas-mes-gasto').textContent = fmtHoras(hGastoMes);
+      document.getElementById('colab-horas-mes-previsto').textContent = fmtHoras(hPrevMes);
+      document.getElementById('colab-horas-mes-saldo').textContent = fmtHoras(saldoMes);
+      document.getElementById('colab-horas-mes-status').textContent = saldoMes >= 0 ? "Disponível" : "Sobrecarga!";
+      document.getElementById('colab-horas-mes-status').className = saldoMes >= 0 ? "text-emerald-700 font-bold" : "text-red-700 font-black";
+
+      renderizarTabelaMinhasAtividades(minhas);
+      renderizarBannerEmProducao();
+
+      setTimeout(() => {
+        renderizarGraficoMinhasTarefas(minhas);
+        renderizarGraficoAndamentoGeral();
+      }, 50);
+    }
+
+    function renderizarTabelaMinhasAtividades(lista) {
+      const tbody = document.getElementById('tabela-minhas-tarefas');
+      tbody.innerHTML = "";
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-neutral-400">Nenhuma tarefa no filtro selecionado.</td></tr>`;
+        return;
+      }
+      // Ordem: em produção, atrasadas/abertas por prazo, concluídas por último
+      const ordem = { 'Em Produção': 0, 'Em Pausa': 1, 'A Fazer': 1, 'Aprovação': 2, 'Concluído': 3 };
+      [...lista].sort((a, b) => (ordem[a.status] ?? 1) - (ordem[b.status] ?? 1) || a.prazo.localeCompare(b.prazo)).forEach(t => {
+        const pr = projetos.find(p => p.id === t.projetoId);
+        const pi = pr && pr.pilares ? pr.pilares.find(p => p.id === t.pilarId) : null;
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-neutral-50 border-b border-neutral-100";
+        tr.innerHTML = `
+          <td class="p-3 font-bold text-neutral-900"><button onclick="abrirDetalheTarefa('${t.id}')" class="text-left hover:text-red-600 hover:underline">${escaparHtml(t.titulo)}</button></td>
+          <td class="p-3">
+            <div class="font-bold text-neutral-800">${pr ? escaparHtml(pr.nome) : ''}</div>
+            <div class="text-[11px] text-red-600 font-semibold">${pi ? escaparHtml(pi.nome) : ''}</div>
+          </td>
+          <td class="p-3 font-medium">${formatarData(t.prazo)}</td>
+          <td class="p-3 text-center font-bold whitespace-nowrap">${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}</td>
+          <td class="p-3">${badgeStatus(t.status)}</td>
+          <td class="p-3"><div class="flex flex-wrap justify-end gap-1.5">${botoesAcaoTarefa(t)}<button onclick="abrirDetalheTarefa('${t.id}')" class="px-2 py-1 border border-neutral-300 rounded text-[11px] font-bold hover:bg-neutral-100">Detalhes</button></div></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Faixa no topo do painel do colaborador com a atividade em produção e o cronômetro
+    function renderizarBannerEmProducao(alvoId = 'colab-em-producao') {
+      const alvo = document.getElementById(alvoId);
+      const atual = tarefas.find(t => t.colaboradorId === usuarioLogado.id && t.status === 'Em Produção');
+      if (!atual) {
+        const proximas = tarefas.filter(t => t.colaboradorId === usuarioLogado.id && (t.status === 'A Fazer' || t.status === 'Em Pausa')).length;
+        // Gestão sem atividades próprias pendentes: não mostra nada
+        if (usuarioLogado.role !== 'colaborador' && proximas === 0) { alvo.innerHTML = ''; return; }
+        alvo.innerHTML = `
+          <div class="glass-card p-4 rounded-xl border border-dashed border-neutral-300 text-xs text-neutral-600 flex flex-wrap items-center justify-between gap-2">
+            <span><strong class="text-neutral-900">Nenhuma atividade em produção agora.</strong> ${proximas ? `Você tem ${proximas} atividade(s) a fazer ou em pausa: use <strong>Iniciar</strong> ou <strong>Retomar</strong> para registrar o tempo.` : 'Crie uma atividade ou aguarde novas atribuições.'}</span>
+          </div>`;
+        return;
+      }
+      const pr = projetos.find(p => p.id === atual.projetoId);
+      alvo.innerHTML = `
+        <div class="rounded-xl p-4 bg-neutral-900 text-white border-l-4 border-red-600 shadow flex flex-wrap items-center justify-between gap-4">
+          <div class="min-w-0">
+            <p class="text-[10px] uppercase font-bold text-red-400 tracking-wider">Em produção agora · ${pr ? escaparHtml(pr.nome) : ''}</p>
+            <button onclick="abrirDetalheTarefa('${atual.id}')" class="text-sm font-black text-left hover:underline">${escaparHtml(atual.titulo)}</button>
+            <p class="text-[11px] text-neutral-400">Total consumido: ${fmtHoras(atual.tempo_gasto)} de ${fmtHoras(atual.tempo_estimado)} previstas</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="text-right">
+              <p class="text-[10px] uppercase text-neutral-400 font-bold">Nesta sessão</p>
+              <p class="text-2xl font-black font-mono tabular-nums" data-cronometro="${atual.sessaoIniciadaEm || ''}">${atual.sessaoIniciadaEm ? fmtCronometro(atual.sessaoIniciadaEm) : '--:--:--'}</p>
+            </div>
+            <div class="flex flex-wrap gap-1.5">${botoesAcaoTarefa(atual, true)}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderizarGraficoMinhasTarefas(lista) {
+      const counts = {};
+      STATUS_TAREFA.forEach(s => { counts[s.rotulo] = 0; });
+      lista.forEach(t => { const r = rotuloStatus(t.status); counts[r] = (counts[r] || 0) + 1; });
+
+      if (chartMinhasTarefas) chartMinhasTarefas.destroy();
+      const ctx = document.getElementById('graficoMinhasTarefas').getContext('2d');
+      chartMinhasTarefas = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(counts),
+          datasets: [{ data: Object.values(counts), backgroundColor: STATUS_TAREFA.map(s => s.cor) }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+      });
+    }
+
+    function renderizarGraficoAndamentoGeral() {
+      const labels = projetos.map(p => p.nome.length > 20 ? p.nome.substring(0, 18) + '...' : p.nome);
+      const percentuais = projetos.map(p => {
+        const tarsProj = tarefas.filter(t => t.projetoId === p.id);
+        if (tarsProj.length === 0) return 0;
+        const concluidas = tarsProj.filter(t => t.status === 'Concluído').length;
+        return Number(((concluidas / tarsProj.length) * 100).toFixed(0));
+      });
+
+      if (chartAndamentoGeral) chartAndamentoGeral.destroy();
+      const ctx = document.getElementById('graficoAndamentoGeralProjetos').getContext('2d');
+      chartAndamentoGeral = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: labels, datasets: [{ label: '% Concluído', data: percentuais, backgroundColor: '#52525b', borderRadius: 4 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { max: 100, ticks: { callback: v => v + '%' } } } }
+      });
+    }
+
+    function renderizarKanbanGeral() {
+      const contagem = {};
+      STATUS_TAREFA.forEach(s => {
+        document.getElementById(`coluna-k-${s.coluna}`).innerHTML = "";
+        contagem[s.valor] = 0;
+      });
+
+      const filtroProj = document.getElementById('filtroProjetoKanban').value;
+      let lista = tarefas;
+
+      const blocoResp = document.getElementById('blocoFiltroResponsavelKanban');
+      if (usuarioLogado.role === 'colaborador') {
+        blocoResp.classList.add('hidden');
+        lista = lista.filter(t => t.colaboradorId === usuarioLogado.id);
+      } else {
+        // Gestão/diretoria: filtro por responsável (inclui "Minhas atividades")
+        blocoResp.classList.remove('hidden');
+        const selResp = document.getElementById('filtroResponsavelKanban');
+        const anterior = selResp.value;
+        const ids = [...new Set(tarefas.map(t => t.colaboradorId))].filter(id => id !== usuarioLogado.id);
+        selResp.innerHTML = '<option value="todos">Toda a equipe</option>' +
+          (tarefas.some(t => t.colaboradorId === usuarioLogado.id) ? `<option value="${usuarioLogado.id}">Minhas atividades</option>` : '') +
+          ids.map(id => ({ id, nome: nomeUsuario(id) })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+            .map(u => `<option value="${u.id}">${escaparHtml(u.nome)}</option>`).join('');
+        selResp.value = [...selResp.options].some(o => o.value === anterior) ? anterior : 'todos';
+        if (selResp.value !== 'todos') lista = lista.filter(t => t.colaboradorId === selResp.value);
+      }
+      if (filtroProj !== 'todos') {
+        lista = lista.filter(t => t.projetoId === filtroProj);
+      }
+
+      const hoje = dataLocalISO();
+
+      lista.forEach(t => {
+        const estaAtrasada = t.prazo < hoje && t.status !== 'Concluído';
+        const pr = projetos.find(p => p.id === t.projetoId);
+        const pi = pr && pr.pilares ? pr.pilares.find(p => p.id === t.pilarId) : null;
+        const resp = usuarios.find(u => u.id === t.colaboradorId);
+
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-lg border shadow-sm transition bg-white ${estaAtrasada ? 'border-red-500' : 'border-neutral-200'}`;
+
+        const botaoExcluir = usuarioLogado.role === 'gestor'
+          ? `<span class="flex items-center gap-2"><button onclick="transferirTarefa('${t.id}')" title="Transferir para outro responsável" class="px-2 py-0.5 rounded border border-violet-300 bg-violet-50 hover:bg-violet-100 text-[10px] text-violet-800 font-bold">⇄ Transferir</button><button onclick="excluirTarefaGestor('${t.id}')" class="text-[10px] text-red-600 font-bold hover:underline">Excluir</button></span>`
+          : '';
+        const prioridade = t.prioridade || 'Média';
+        const acoes = botoesAcaoTarefa(t);
+
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-1 gap-2">
+            <span class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">${pr ? escaparHtml(pr.nome) : 'Projeto'}</span>
+            <div class="flex gap-1 shrink-0">
+              <span class="text-[9px] font-black px-1 rounded ${CORES_PRIORIDADE[prioridade] || 'bg-neutral-200'}">${escaparHtml(prioridade).toUpperCase()}</span>
+              ${estaAtrasada ? '<span class="text-[9px] bg-red-600 text-white font-black px-1 rounded">ATRASADA</span>' : ''}
+            </div>
+          </div>
+          <h4 class="font-bold text-xs text-neutral-900 mb-1 leading-snug"><button onclick="abrirDetalheTarefa('${t.id}')" class="text-left hover:text-red-600 hover:underline">${escaparHtml(t.titulo)}</button></h4>
+          ${t.descricao ? `<p class="text-[11px] text-neutral-500 mb-1 line-clamp-2">${escaparHtml(t.descricao)}</p>` : ''}
+          <p class="text-[11px] text-red-600 font-semibold mb-2">Pilar: ${pi ? escaparHtml(pi.nome) : 'Geral'}</p>
+
+          <div class="border-t border-neutral-100 pt-1.5 flex justify-between items-center text-[10px] text-neutral-600">
+            <span>Resp: <strong>${resp ? escaparHtml(resp.nome) : 'N/A'}</strong></span>
+            <span>Prazo: <strong>${formatarData(t.prazo)}</strong></span>
+          </div>
+
+          <div class="mt-1 flex justify-between items-center text-[10px] font-bold text-neutral-700">
+            <span>Horas: ${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}</span>
+            ${t.status === 'Em Produção' && t.sessaoIniciadaEm ? `<span class="font-mono text-red-600 tabular-nums" title="Tempo desta sessão" data-cronometro="${t.sessaoIniciadaEm}">${fmtCronometro(t.sessaoIniciadaEm)}</span>` : ''}
+          </div>
+
+          ${acoes ? `<div class="mt-2 flex flex-wrap gap-1.5">${acoes}</div>` : ''}
+
+          <div class="mt-2 pt-2 border-t border-neutral-100 flex justify-between items-center">
+            ${botaoExcluir}
+            <button onclick="abrirDetalheTarefa('${t.id}')" class="text-[10px] font-bold text-neutral-600 hover:text-red-600 hover:underline ml-auto">Detalhes e anotações →</button>
+          </div>
+        `;
+
+        const statusInfo = STATUS_TAREFA.find(s => s.valor === t.status);
+        if (statusInfo) {
+          document.getElementById(`coluna-k-${statusInfo.coluna}`).appendChild(card);
+          contagem[t.status]++;
+        }
+      });
+
+      STATUS_TAREFA.forEach(s => {
+        document.getElementById(`kanban-c-${s.coluna}`).textContent = contagem[s.valor];
+      });
+    }
+
+    // OPERAÇÕES DO GESTOR
+    function renderizarTabelaUsuariosEquipe() {
+      const tb = document.getElementById('tabela-usuarios-equipe');
+      tb.innerHTML = "";
+      const gestor = usuarioLogado.role === 'gestor';
+      usuarios.forEach(u => {
+        const abertas = tarefas.filter(t => t.colaboradorId === u.id && t.status !== 'Concluído').length;
+        const acoes = [
+          gestor && abertas > 0
+            ? `<button onclick="transferirAtividadesUsuario('${u.id}')" class="px-2 py-1 border border-neutral-300 rounded text-[11px] font-bold text-neutral-800 hover:bg-neutral-100">⇄ Transferir (${abertas})</button>`
+            : '',
+          gestor && u.role !== 'gestor'
+            ? `<button onclick="alternarBloqueioUsuario('${u.id}')" class="px-2 py-1 border rounded text-[11px] font-bold ${u.status === 'ativo' ? 'border-amber-400 text-amber-700 hover:bg-amber-50' : 'border-emerald-400 text-emerald-700 hover:bg-emerald-50'}">${u.status === 'ativo' ? 'Bloquear' : 'Desbloquear'}</button>`
+            : ''
+        ].filter(Boolean).join(' ');
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-neutral-50 border-b border-neutral-100";
+        tr.innerHTML = `
+          <td class="p-3 font-bold text-neutral-900">${escaparHtml(u.nome)}</td>
+          <td class="p-3 text-neutral-600">${escaparHtml(u.email)}</td>
+          <td class="p-3 text-neutral-700 font-medium">${escaparHtml(u.cargo)}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-200">${escaparHtml(u.modelo_contratacao)}</span></td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${u.role === 'gestor' ? 'bg-red-100 text-red-800' : (u.role === 'diretoria' ? 'bg-emerald-100 text-emerald-800' : 'bg-neutral-200 text-neutral-800')}">${u.role}</span></td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-black ${u.status === 'ativo' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${u.status.toUpperCase()}</span></td>
+          <td class="p-3 text-center font-bold ${abertas && u.status !== 'ativo' ? 'text-red-700' : 'text-neutral-800'}" title="${abertas && u.status !== 'ativo' ? 'Usuário bloqueado com atividades em aberto' : ''}">${abertas || '<span class="text-neutral-300">0</span>'}</td>
+          <td class="p-3 text-right whitespace-nowrap">${acoes || '<span class="text-neutral-400 text-[10px]">-</span>'}</td>
+        `;
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderizarGraficosGestor() {
+      const labels = projetos.map(p => p.nome.length > 20 ? p.nome.substring(0, 18) + '...' : p.nome);
+      const orc = projetos.map(p => p.pilares.reduce((sum, pil) => sum + pil.orcado, 0));
+      const gst = projetos.map(p => gastos.filter(g => g.projetoId === p.id).reduce((sum, g) => sum + g.valor, 0));
+
+      if (chartProjetosGestor) chartProjetosGestor.destroy();
+      const ctxP = document.getElementById('graficoProjetosGestor').getContext('2d');
+      chartProjetosGestor = new Chart(ctxP, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Orçado (R$)', data: orc, backgroundColor: '#52525b', borderRadius: 3 },
+            { label: 'Realizado (R$)', data: gst, backgroundColor: '#dc2626', borderRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + (v/1000) + 'k' }, grid: { color: '#f1f5f9' } },
+            x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      const mapaCat = {};
+      gastos.forEach(g => { mapaCat[g.tipo] = (mapaCat[g.tipo] || 0) + g.valor; });
+      const catLabels = Object.keys(mapaCat);
+      const catValores = Object.values(mapaCat);
+
+      if (chartCategoriasGestor) chartCategoriasGestor.destroy();
+      const ctxC = document.getElementById('graficoCategoriasGestor').getContext('2d');
+      chartCategoriasGestor = new Chart(ctxC, {
+        type: 'doughnut',
+        data: {
+          labels: catLabels.length > 0 ? catLabels : ['Sem despesas'],
+          datasets: [{ data: catValores.length > 0 ? catValores : [1], backgroundColor: ['#dc2626', '#18181b', '#71717a', '#b91c1c', '#27272a', '#ef4444', '#a1a1aa', '#991b1b'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+      });
+    }
+
+    // UTILS E AUXILIARES
+    function popularSelects() {
+      const selGastoProj = document.getElementById('gastoProjeto');
+      selGastoProj.innerHTML = '<option value="">Selecione o Projeto...</option>';
+      projetos.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nome;
+        selGastoProj.appendChild(opt);
+      });
+
+      const selTipo = document.getElementById('gastoTipo');
+      selTipo.innerHTML = '<option value="">Selecione o Tipo de Gasto...</option>';
+      tiposGasto.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.nome;
+        selTipo.appendChild(opt);
+      });
+
+      const selTarPr = document.getElementById('novaTarProjeto');
+      selTarPr.innerHTML = '<option value="">Selecione o Projeto...</option>';
+      projetos.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nome;
+        selTarPr.appendChild(opt);
+      });
+
+      const selTarResp = document.getElementById('novaTarResponsavel');
+      selTarResp.innerHTML = '<option value="">Selecione o Responsável...</option>';
+      equipeAtribuivel.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        const ehVoce = usuarioLogado && u.id === usuarioLogado.id;
+        opt.textContent = `${u.nome} (${u.cargo})${u.role === 'admin' ? ' · Gestão' : ''}${ehVoce ? ' — você' : ''}`;
+        selTarResp.appendChild(opt);
+      });
+
+      const filtroColabPr = document.getElementById('filtroProjetoColab');
+      filtroColabPr.innerHTML = '<option value="todos">Todos os Projetos</option>';
+      projetos.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nome;
+        filtroColabPr.appendChild(opt);
+      });
+
+      const filtroKanbanPr = document.getElementById('filtroProjetoKanban');
+      filtroKanbanPr.innerHTML = '<option value="todos">Todos os Projetos</option>';
+      projetos.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nome;
+        filtroKanbanPr.appendChild(opt);
+      });
+    }
+
+    function abrirModalNovaTarefa() {
+      if (usuarioLogado.role === 'diretoria') return;
+      document.querySelector('#modalNovaTarefa form').reset();
+      atualizarPilaresNovaTarefa();
+      const prazo = document.getElementById('novaTarPrazo');
+      prazo.min = dataLocalISO();
+      const selResp = document.getElementById('novaTarResponsavel');
+      const subtitulo = document.getElementById('subtituloModalNovaTarefa');
+      if (usuarioLogado.role === 'colaborador') {
+        if (equipeAtribuivel.some(u => u.id === usuarioLogado.id)) selResp.value = usuarioLogado.id;
+        subtitulo.textContent = 'Crie uma atividade para você ou para um colega da equipe.';
+      } else {
+        subtitulo.textContent = 'Atribua a atividade a um membro da equipe ou a você mesma.';
+      }
+      if (equipeAtribuivel.length === 0) {
+        notificar('Nenhum colaborador ativo disponível para receber atividades.', 'erro');
+      }
+      document.getElementById('modalNovaTarefa').classList.remove('hidden');
+      document.getElementById('novaTarTitulo').focus();
+    }
+    function fecharModalNovaTarefa() { document.getElementById('modalNovaTarefa').classList.add('hidden'); }
+
+    async function salvarNovaTarefa(e) {
+      e.preventDefault();
+      if (usuarioLogado.role === 'diretoria') {
+        notificar('A diretoria tem acesso apenas de visualização.', 'erro');
+        return;
+      }
+      const colaboradorId = document.getElementById('novaTarResponsavel').value;
+      const responsavel = equipeAtribuivel.find(u => u.id === colaboradorId);
+      if (!responsavel) {
+        notificar('Selecione um responsável válido da equipe.', 'erro');
+        return;
+      }
+      const registro = {
+        titulo: document.getElementById('novaTarTitulo').value.trim(),
+        descricao: document.getElementById('novaTarDescricao').value.trim() || null,
+        projeto_id: document.getElementById('novaTarProjeto').value,
+        pilar_id: document.getElementById('novaTarPilar').value,
+        colaborador_id: colaboradorId,
+        prazo_entrega: document.getElementById('novaTarPrazo').value,
+        prioridade: document.getElementById('novaTarPrioridade').value,
+        status: 'A Fazer',
+        tempo_estimado: parseFloat(document.getElementById('novaTarHorasPrevistas').value),
+        tempo_gasto: 0
+      };
+
+      await comBotaoOcupado(e, async () => {
+        const { error } = await clienteSupabase.from('tarefas').insert(registro);
+        if (error) {
+          notificar(`Não foi possível salvar a atividade: ${mensagemErro(error)}`, 'erro');
+          return;
+        }
+        fecharModalNovaTarefa();
+        notificar(colaboradorId === usuarioLogado.id ? 'Atividade criada.' : `Atividade atribuída a ${responsavel.nome}.`);
+        await recarregarDados();
+      });
+    }
+
+    // FUNÇÕES RESTAURADAS
+    function formatarData(iso) {
+      if (!iso) return '';
+      const [a, m, d] = String(iso).split('-');
+      return d ? `${d}/${m}/${a}` : iso;
+    }
+
+    function formatarMoeda(valor) {
+      return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function escaparHtml(texto) {
+      const div = document.createElement('div');
+      div.textContent = texto == null ? '' : String(texto);
+      return div.innerHTML;
+    }
+
+    function arredondar(valor) {
+      return Math.round(Number(valor) * 100) / 100;
+    }
+
+    function usuarioPodeGerir() {
+      if (usuarioLogado && usuarioLogado.role === 'gestor') return true;
+      alert("Seu perfil não tem permissão para esta ação.");
+      return false;
+    }
+
+    function buscarPilar(projetoId, pilarId) {
+      const projeto = projetos.find(p => p.id === projetoId);
+      const pilar = projeto ? projeto.pilares.find(p => p.id === pilarId) : null;
+      return { projeto, pilar };
+    }
+
+    function gastoDoPilar(pilarId) {
+      return gastos.filter(g => g.pilarId === pilarId).reduce((sum, g) => sum + Number(g.valor || 0), 0);
+    }
+
+    function saldoDoPilar(pilar) {
+      return arredondar(Number(pilar.orcado || 0) - gastoDoPilar(pilar.id));
+    }
+
+    function preencherSelectPilares(idSelectProjeto, idSelectPilar) {
+      const projeto = projetos.find(p => p.id === document.getElementById(idSelectProjeto).value);
+      const selPilar = document.getElementById(idSelectPilar);
+      selPilar.innerHTML = '<option value="">Selecione o Pilar...</option>';
+      if (!projeto) return;
+      projeto.pilares.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nome;
+        selPilar.appendChild(opt);
+      });
+    }
+
+    function atualizarTodaAplicacao() {
+      if (!usuarioLogado) return;
+
+      const filtroColab = document.getElementById('filtroProjetoColab').value;
+      const filtroKanban = document.getElementById('filtroProjetoKanban').value;
+      popularSelects();
+      document.getElementById('filtroProjetoColab').value = filtroColab;
+      document.getElementById('filtroProjetoKanban').value = filtroKanban;
+      atualizarPilaresNovaTarefa();
+      atualizarSelectPilaresGasto();
+
+      if (usuarioLogado.role !== 'colaborador') {
+        renderizarPainelOrcamento();
+        renderizarPainelAndamento();
+        if (usuarioLogado.role === 'gestor') renderizarBannerEmProducao('gestor-em-producao');
+        else document.getElementById('gestor-em-producao').innerHTML = '';
+        if (typeof kpiRenderizarAlerta === 'function') kpiRenderizarAlerta();
+        // Relatórios abertos: atualiza com os dados novos
+        if (!document.getElementById('gestor-secao-relatorios').classList.contains('hidden') && typeof relRenderizar === 'function') relRenderizar();
+        renderizarEstruturaPilares();
+        renderizarTabelaUsuariosEquipe();
+      }
+    }
+
+    function renderizarPainelOrcamento() {
+      const estourados = [];
+      let totalOrcado = 0, totalDeficit = 0;
+
+      projetos.forEach(p => {
+        p.pilares.forEach(pil => {
+          const orcado = Number(pil.orcado || 0);
+          const gasto = gastoDoPilar(pil.id);
+          totalOrcado += orcado;
+          if (gasto > orcado) {
+            totalDeficit += gasto - orcado;
+            estourados.push({ projeto: p.nome, pilar: pil.nome, orcado, gasto, deficit: gasto - orcado });
+          }
+        });
+      });
+
+      const totalGasto = gastos.reduce((sum, g) => sum + Number(g.valor || 0), 0);
+      const totalRealocado = realocacoes.reduce((sum, r) => sum + Number(r.valor || 0), 0);
+      const saldo = totalOrcado - totalGasto;
+      const pctExec = totalOrcado > 0 ? (totalGasto / totalOrcado) * 100 : 0;
+
+      document.getElementById('kpi-orcado').textContent = formatarMoeda(totalOrcado);
+      document.getElementById('kpi-qtd-projetos').textContent = `${projetos.length} Projetos`;
+      document.getElementById('kpi-gasto').textContent = formatarMoeda(totalGasto);
+      document.getElementById('kpi-pct-exec').textContent = `${pctExec.toFixed(1).replace('.', ',')}% executado`;
+      document.getElementById('kpi-saldo').textContent = formatarMoeda(saldo);
+      document.getElementById('kpi-deficit-total').textContent = formatarMoeda(totalDeficit);
+      document.getElementById('kpi-qtd-estourados').textContent = `${estourados.length} pilares estourados`;
+      document.getElementById('kpi-total-realocado').textContent = formatarMoeda(totalRealocado);
+      document.getElementById('kpi-qtd-realocacoes').textContent = `${realocacoes.length} transferências`;
+      document.getElementById('badge-contador-realocacoes').textContent = `${realocacoes.length} registros`;
+
+      document.getElementById('bloco-alerta-estouros').classList.toggle('hidden', estourados.length === 0);
+      document.getElementById('tabela-pilares-estourados').innerHTML = estourados.map(e => `
+        <tr>
+          <td class="py-2 font-bold text-neutral-900">${escaparHtml(e.projeto)}</td>
+          <td class="py-2">${escaparHtml(e.pilar)}</td>
+          <td class="py-2 text-right">${formatarMoeda(e.orcado)}</td>
+          <td class="py-2 text-right">${formatarMoeda(e.gasto)}</td>
+          <td class="py-2 text-right font-bold text-red-700">${formatarMoeda(e.deficit)}</td>
+          <td class="py-2 text-center font-bold">${e.orcado > 0 ? ((e.deficit / e.orcado) * 100).toFixed(1).replace('.', ',') + '%' : '-'}</td>
+        </tr>
+      `).join('');
+
+      const tbRealoc = document.getElementById('tabela-historico-realocacoes');
+      tbRealoc.innerHTML = realocacoes.length === 0
+        ? `<tr><td colspan="5" class="p-3 text-center text-neutral-400">Nenhuma realocação registrada.</td></tr>`
+        : realocacoes.map(r => `
+          <tr>
+            <td class="p-3">${escaparHtml(r.dataHora)}</td>
+            <td class="p-3">${escaparHtml(r.origem)}</td>
+            <td class="p-3">${escaparHtml(r.destino)}</td>
+            <td class="p-3">${escaparHtml(r.motivo)}</td>
+            <td class="p-3 text-right font-bold">${formatarMoeda(r.valor)}</td>
+          </tr>
+        `).join('');
+    }
+
+    // ===== PAINEL DE ANDAMENTO (GESTÃO DE MÚLTIPLOS PROJETOS) =====
+    // Formata horas decimais como "1h 25min" (ou "40min" / "-2h")
+    function fmtHoras(h) {
+      const total = Math.round(Math.abs(Number(h) || 0) * 60);
+      const sinal = Number(h) < 0 && total > 0 ? '-' : '';
+      const horas = Math.floor(total / 60), minutos = total % 60;
+      if (horas === 0) return `${sinal}${minutos}min`;
+      return `${sinal}${horas}h${minutos ? ` ${String(minutos).padStart(2, '0')}min` : ''}`;
+    }
+
+    // Cronômetro "hh:mm:ss" desde um instante ISO
+    function fmtCronometro(desdeISO) {
+      const s = Math.max(0, Math.floor((Date.now() - Date.parse(desdeISO)) / 1000));
+      return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map(n => String(n).padStart(2, '0')).join(':');
+    }
+
+    function fmtDataHora(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Atualiza todos os cronômetros visíveis a cada segundo
+    setInterval(() => {
+      document.querySelectorAll('[data-cronometro]').forEach(el => {
+        if (el.dataset.cronometro) el.textContent = fmtCronometro(el.dataset.cronometro);
+      });
+    }, 1000);
+
+    function corStatus(valor) {
+      const s = STATUS_TAREFA.find(x => x.valor === valor);
+      return s ? s.cor : '#a1a1aa';
+    }
+
+    function badgeStatus(valor) {
+      return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-neutral-100 text-neutral-800 whitespace-nowrap"><span class="w-2 h-2 rounded-full" style="background:${corStatus(valor)}"></span>${escaparHtml(rotuloStatus(valor))}</span>`;
+    }
+
+    function dataDeISO(iso) {
+      const [a, m, d] = String(iso).split('-').map(Number);
+      return new Date(a, m - 1, d);
+    }
+
+    function diasAte(iso, hoje) {
+      return Math.round((dataDeISO(iso) - dataDeISO(hoje)) / 86400000);
+    }
+
+    function resumoTarefas(lista, hoje) {
+      const em3 = new Date(); em3.setDate(em3.getDate() + 3);
+      const limite3 = dataLocalISO(em3);
+      const r = { total: lista.length, porStatus: {}, atrasadas: 0, venceEm3: 0, gasto: 0, previsto: 0, concluidas: 0, noPrazo: 0 };
+      STATUS_TAREFA.forEach(s => { r.porStatus[s.valor] = 0; });
+      lista.forEach(t => {
+        r.porStatus[t.status] = (r.porStatus[t.status] || 0) + 1;
+        r.gasto += Number(t.tempo_gasto || 0);
+        r.previsto += Number(t.tempo_estimado || 0);
+        if (t.status === 'Concluído') {
+          r.concluidas++;
+          if (t.slaCumprido !== false) r.noPrazo++;
+        } else if (t.prazo < hoje) {
+          r.atrasadas++;
+        } else if (t.prazo <= limite3) {
+          r.venceEm3++;
+        }
+      });
+      r.pctConcluido = r.total ? Math.round((r.concluidas / r.total) * 100) : 0;
+      r.pctHoras = r.previsto ? Math.round((r.gasto / r.previsto) * 100) : 0;
+      r.horasEstouradas = r.previsto > 0 && r.gasto > r.previsto;
+      return r;
+    }
+
+    function saudeProjeto(r) {
+      if (r.total === 0) return { rotulo: 'Sem atividades', classe: 'bg-neutral-100 text-neutral-500', dica: 'Nenhuma atividade cadastrada.' };
+      if (r.concluidas === r.total) return { rotulo: 'Concluído', classe: 'bg-emerald-100 text-emerald-800', dica: 'Todas as atividades foram concluídas.' };
+      if (r.atrasadas >= 2 || r.horasEstouradas) return { rotulo: 'Crítico', classe: 'bg-red-600 text-white', dica: 'Duas ou mais atividades atrasadas, ou horas consumidas acima do previsto.' };
+      if (r.atrasadas === 1 || r.porStatus['Em Pausa'] > 0 || r.venceEm3 > 0) return { rotulo: 'Atenção', classe: 'bg-amber-100 text-amber-800', dica: 'Há atividade atrasada, em pausa ou vencendo em até 3 dias.' };
+      return { rotulo: 'Em dia', classe: 'bg-emerald-100 text-emerald-800', dica: 'Sem atrasos, pausas ou entregas iminentes.' };
+    }
+
+    function renderizarPainelAndamento() {
+      const selProj = document.getElementById('filtroAndamentoProjeto');
+      const selColab = document.getElementById('filtroAndamentoColaborador');
+      const projAnterior = selProj.value;
+      const colabAnterior = selColab.value;
+
+      const nomeDe = id => { const u = usuarios.find(x => x.id === id); return u ? u.nome : 'Sem responsável'; };
+      const membros = usuarios
+        .filter(u => u.role === 'colaborador' || tarefas.some(t => t.colaboradorId === u.id))
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+      selProj.innerHTML = '<option value="todos">Todos os projetos</option>' +
+        projetos.map(p => `<option value="${p.id}">${escaparHtml(p.nome)}</option>`).join('');
+      selColab.innerHTML = '<option value="todos">Toda a equipe</option>' +
+        membros.map(u => `<option value="${u.id}">${escaparHtml(u.nome)}</option>`).join('');
+      selProj.value = projetos.some(p => p.id === projAnterior) ? projAnterior : 'todos';
+      selColab.value = membros.some(u => u.id === colabAnterior) ? colabAnterior : 'todos';
+
+      const hoje = dataLocalISO();
+      const filtrandoColab = selColab.value !== 'todos';
+      const projetosVisiveis = selProj.value === 'todos' ? projetos : projetos.filter(p => p.id === selProj.value);
+      // base = todas as atividades dos projetos visíveis (horas por pessoa olham quem trabalhou, não só o responsável)
+      const base = tarefas.filter(t => projetosVisiveis.some(p => p.id === t.projetoId));
+      let lista = base;
+      if (filtrandoColab) lista = lista.filter(t => t.colaboradorId === selColab.value);
+      const geral = resumoTarefas(lista, hoje);
+      if (filtrandoColab) {
+        // Horas da pessoa = o que ela trabalhou (inclusive em atividades que já foram transferidas)
+        geral.gasto = horasPorExecutor(base).get(selColab.value) || 0;
+        geral.pctHoras = geral.previsto ? Math.round((geral.gasto / geral.previsto) * 100) : 0;
+        geral.horasEstouradas = geral.previsto > 0 && geral.gasto > geral.previsto;
+      }
+
+      // --- Indicadores ---
+      const kpi = (titulo, valor, detalhe, cor) => `
+        <div class="p-3 rounded-lg border border-neutral-200 border-l-4 bg-white" style="border-left-color:${cor}">
+          <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">${titulo}</p>
+          <p class="text-xl font-black text-neutral-900 leading-tight mt-0.5">${valor}</p>
+          <p class="text-[10px] text-neutral-500">${detalhe}</p>
+        </div>`;
+      const pctDoTotal = n => geral.total ? `${Math.round((n / geral.total) * 100)}% do total` : 'sem atividades';
+      document.getElementById('andamento-kpis').innerHTML = [
+        kpi('A iniciar', geral.porStatus['A Fazer'], pctDoTotal(geral.porStatus['A Fazer']), corStatus('A Fazer')),
+        kpi('Em andamento', geral.porStatus['Em Produção'], pctDoTotal(geral.porStatus['Em Produção']), corStatus('Em Produção')),
+        kpi('Em pausa', geral.porStatus['Em Pausa'], pctDoTotal(geral.porStatus['Em Pausa']), corStatus('Em Pausa')),
+        kpi('Em aprovação', geral.porStatus['Aprovação'], pctDoTotal(geral.porStatus['Aprovação']), corStatus('Aprovação')),
+        kpi('Concluídas', geral.concluidas, pctDoTotal(geral.concluidas), corStatus('Concluído')),
+        kpi('Atrasadas', geral.atrasadas, geral.atrasadas ? 'prazo vencido e não concluídas' : 'nenhum atraso', geral.atrasadas ? '#b91c1c' : '#d4d4d8'),
+        kpi('Horas consumidas', fmtHoras(geral.gasto), `de ${fmtHoras(geral.previsto)} previstas (${geral.pctHoras}%)`, geral.horasEstouradas ? '#b91c1c' : '#18181b'),
+        kpi('Entregas no prazo', geral.concluidas ? `${Math.round((geral.noPrazo / geral.concluidas) * 100)}%` : '—', `${geral.noPrazo} de ${geral.concluidas} concluídas`, '#18181b')
+      ].join('');
+
+      // --- Cartões por projeto ---
+      const cartoes = projetosVisiveis.map(p => {
+        const tp = lista.filter(t => t.projetoId === p.id);
+        if (filtrandoColab && tp.length === 0) return '';
+        const r = resumoTarefas(tp, hoje);
+        const saude = saudeProjeto(r);
+
+        const barraStatus = STATUS_TAREFA.filter(s => r.porStatus[s.valor] > 0).map(s =>
+          `<div title="${s.rotulo}: ${r.porStatus[s.valor]}" style="width:${(r.porStatus[s.valor] / r.total) * 100}%;background:${s.cor}"></div>`
+        ).join('');
+        const legenda = STATUS_TAREFA.map(s =>
+          `<span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${s.cor}"></span>${s.rotulo} <strong class="text-neutral-900">${r.porStatus[s.valor]}</strong></span>`
+        ).join('');
+
+        // Horas por pessoa no projeto: consumidas = sessões de quem trabalhou; previstas = atividades sob sua responsabilidade
+        const doProjeto = base.filter(t => t.projetoId === p.id);
+        const trabalhadas = horasPorExecutor(doProjeto);
+        const porColab = {};
+        const pessoa = id => porColab[id] || (porColab[id] = { gasto: 0, previsto: 0 });
+        doProjeto.forEach(t => { pessoa(t.colaboradorId).previsto += Number(t.tempo_estimado || 0); });
+        trabalhadas.forEach((h, id) => { pessoa(id).gasto += h; });
+        if (filtrandoColab) Object.keys(porColab).forEach(id => { if (id !== selColab.value) delete porColab[id]; });
+        const chipsEquipe = Object.entries(porColab)
+          .sort((a, b) => b[1].gasto - a[1].gasto)
+          .map(([id, v]) => `<span class="px-2 py-0.5 rounded-full bg-neutral-100 border border-neutral-200 text-[10px] font-semibold text-neutral-700 ${v.previsto > 0 && v.gasto > v.previsto ? 'border-red-300 text-red-700' : ''}">${escaparHtml(nomeDe(id))}: ${fmtHoras(v.gasto)} / ${fmtHoras(v.previsto)}</span>`)
+          .join('');
+
+        const proxima = tp.filter(t => t.status !== 'Concluído' && t.prazo >= hoje).sort((a, b) => a.prazo.localeCompare(b.prazo))[0];
+
+        // Ordem: atrasadas, depois abertas por prazo, concluídas por último
+        const peso = t => (t.status === 'Concluído' ? 2 : (t.prazo < hoje ? 0 : 1));
+        const linhas = [...tp].sort((a, b) => peso(a) - peso(b) || a.prazo.localeCompare(b.prazo)).map(t => {
+          const atrasada = t.status !== 'Concluído' && t.prazo < hoje;
+          const horasEstouradas = t.tempo_estimado > 0 && t.tempo_gasto > t.tempo_estimado;
+          return `
+            <tr>
+              <td class="py-1.5 pr-2">
+                <div class="font-semibold text-neutral-900">${escaparHtml(t.titulo)}</div>
+                ${t.prioridade ? `<span class="text-[9px] font-black px-1 rounded ${CORES_PRIORIDADE[t.prioridade] || 'bg-neutral-200'}">${escaparHtml(t.prioridade).toUpperCase()}</span>` : ''}
+              </td>
+              <td class="py-1.5 pr-2 whitespace-nowrap">${escaparHtml(nomeDe(t.colaboradorId))}</td>
+              <td class="py-1.5 pr-2">${badgeStatus(t.status)}</td>
+              <td class="py-1.5 pr-2 whitespace-nowrap ${atrasada ? 'text-red-700 font-bold' : ''}">${formatarData(t.prazo)}${atrasada ? ' (atrasada)' : ''}</td>
+              <td class="py-1.5 text-right whitespace-nowrap ${horasEstouradas ? 'text-red-700 font-bold' : ''}">${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}</td>
+            </tr>`;
+        }).join('');
+
+        return `
+          <div class="border border-neutral-200 rounded-xl p-4 space-y-3 bg-white">
+            <div class="flex justify-between items-start gap-2">
+              <div class="min-w-0">
+                <h3 class="font-black text-sm text-neutral-900">${escaparHtml(p.nome)}</h3>
+                <p class="text-[11px] text-neutral-500">${r.total} atividade(s) · ${r.concluidas} concluída(s) · <strong class="text-neutral-900">${r.pctConcluido}% de avanço</strong></p>
+              </div>
+              <span title="${saude.dica}" class="shrink-0 px-2 py-0.5 rounded text-[10px] font-black uppercase cursor-help ${saude.classe}">${saude.rotulo}</span>
+            </div>
+            <div class="flex h-2.5 rounded-full overflow-hidden bg-neutral-100">${barraStatus}</div>
+            <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-neutral-600">${legenda}</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+              <div>
+                <div class="flex justify-between"><span class="text-neutral-500">Horas consumidas / previstas</span><strong class="${r.horasEstouradas ? 'text-red-700' : 'text-neutral-900'}">${fmtHoras(r.gasto)} / ${fmtHoras(r.previsto)}</strong></div>
+                <div class="h-1.5 bg-neutral-200 rounded mt-1 overflow-hidden"><div class="h-full ${r.horasEstouradas ? 'bg-red-600' : 'bg-neutral-700'}" style="width:${Math.min(r.pctHoras, 100)}%"></div></div>
+              </div>
+              <div class="space-y-0.5">
+                <div class="flex justify-between"><span class="text-neutral-500">Atrasadas</span><strong class="${r.atrasadas ? 'text-red-700' : 'text-neutral-900'}">${r.atrasadas}</strong></div>
+                <div class="flex justify-between gap-2"><span class="text-neutral-500 shrink-0">Próxima entrega</span><strong class="truncate text-neutral-900" title="${proxima ? escaparHtml(proxima.titulo) : ''}">${proxima ? `${formatarData(proxima.prazo)} · ${escaparHtml(proxima.titulo)}` : '—'}</strong></div>
+              </div>
+            </div>
+            ${chipsEquipe ? `<div><p class="text-[10px] uppercase font-bold text-neutral-500 mb-1">Horas por colaborador</p><div class="flex flex-wrap gap-1.5">${chipsEquipe}</div></div>` : ''}
+            ${tp.length ? `
+              <details>
+                <summary class="cursor-pointer text-[11px] font-bold text-red-600 hover:underline select-none">Ver atividades (${tp.length})</summary>
+                <div class="mt-2 overflow-x-auto custom-scrollbar">
+                  <table class="w-full text-left text-[11px] text-neutral-700">
+                    <thead class="text-[10px] uppercase text-neutral-500 border-b border-neutral-200">
+                      <tr><th class="py-1.5 pr-2">Atividade</th><th class="py-1.5 pr-2">Responsável</th><th class="py-1.5 pr-2">Status</th><th class="py-1.5 pr-2">Prazo</th><th class="py-1.5 text-right">Horas</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100">${linhas}</tbody>
+                  </table>
+                </div>
+              </details>` : ''}
+          </div>`;
+      }).join('');
+
+      document.getElementById('andamento-projetos').innerHTML = cartoes ||
+        `<p class="text-xs text-neutral-400 col-span-full text-center py-6">Nenhuma atividade encontrada para o filtro selecionado.</p>`;
+
+      // --- Matriz de horas colaborador × projeto ---
+      const matriz = document.getElementById('andamento-matriz-horas');
+      const projsComTarefas = projetosVisiveis.filter(p => base.some(t => t.projetoId === p.id));
+      // Linhas: quem é responsável OU já trabalhou em alguma atividade (ex.: antes de uma transferência)
+      const horasPorProjeto = new Map(projsComTarefas.map(p => [p.id, horasPorExecutor(base.filter(t => t.projetoId === p.id))]));
+      const idsPessoas = new Set(base.map(t => t.colaboradorId));
+      horasPorProjeto.forEach(m => m.forEach((_, id) => idsPessoas.add(id)));
+      let idsColab = [...idsPessoas].sort((a, b) => nomeDe(a).localeCompare(nomeDe(b), 'pt-BR'));
+      if (filtrandoColab) idsColab = idsColab.filter(id => id === selColab.value);
+
+      const celula = (g, pv, vazio) => vazio
+        ? '<span class="text-neutral-300">—</span>'
+        : `<span class="font-bold ${pv > 0 && g > pv ? 'text-red-700' : 'text-neutral-900'}">${fmtHoras(g)}</span><span class="text-neutral-400"> / ${fmtHoras(pv)}</span>`;
+      const somaPrevisto = ts => ts.reduce((s, t) => s + Number(t.tempo_estimado || 0), 0);
+      const somaGasto = ts => ts.reduce((s, t) => s + Number(t.tempo_gasto || 0), 0);
+
+      if (base.length === 0 || idsColab.length === 0) {
+        matriz.innerHTML = '<p class="p-4 text-xs text-neutral-400 text-center">Sem horas registradas para o filtro selecionado.</p>';
+      } else {
+        const cab = projsComTarefas.map(p => `<th class="p-2 text-right font-bold max-w-[140px] truncate" title="${escaparHtml(p.nome)}">${escaparHtml(p.nome)}</th>`).join('');
+        const linhasMatriz = idsColab.map(id => {
+          const tc = base.filter(t => t.colaboradorId === id);
+          const abertas = tc.filter(t => t.status !== 'Concluído').length;
+          const atrasadas = tc.filter(t => t.status !== 'Concluído' && t.prazo < hoje).length;
+          let totalG = 0;
+          const celulas = projsComTarefas.map(p => {
+            const g = horasPorProjeto.get(p.id).get(id) || 0;
+            const resp = tc.filter(t => t.projetoId === p.id);
+            totalG += g;
+            return `<td class="p-2 text-right whitespace-nowrap">${celula(g, somaPrevisto(resp), g === 0 && resp.length === 0)}</td>`;
+          }).join('');
+          return `
+            <tr class="hover:bg-neutral-50">
+              <td class="p-2 font-bold text-neutral-900 whitespace-nowrap">${escaparHtml(nomeDe(id))}</td>
+              ${celulas}
+              <td class="p-2 text-right whitespace-nowrap bg-neutral-50">${celula(totalG, somaPrevisto(tc), false)}</td>
+              <td class="p-2 text-center">${abertas}</td>
+              <td class="p-2 text-center ${atrasadas ? 'text-red-700 font-black' : 'text-neutral-400'}">${atrasadas}</td>
+            </tr>`;
+        }).join('');
+        const celulaHoras = ts => celula(somaGasto(ts), somaPrevisto(ts), ts.length === 0);
+        matriz.innerHTML = `
+          <table class="w-full text-left text-[11px] text-neutral-700">
+            <thead class="bg-neutral-100 text-[10px] uppercase text-neutral-700">
+              <tr><th class="p-2">Colaborador</th>${cab}<th class="p-2 text-right">Total</th><th class="p-2 text-center">Abertas</th><th class="p-2 text-center">Atrasadas</th></tr>
+            </thead>
+            <tbody class="divide-y divide-neutral-100">${linhasMatriz}</tbody>
+            <tfoot class="border-t-2 border-neutral-300 bg-neutral-50 font-bold">
+              <tr>
+                <td class="p-2 text-neutral-900">Total do projeto</td>
+                ${projsComTarefas.map(p => `<td class="p-2 text-right whitespace-nowrap">${celulaHoras(base.filter(t => t.projetoId === p.id))}</td>`).join('')}
+                <td class="p-2 text-right whitespace-nowrap">${celulaHoras(base)}</td>
+                <td class="p-2 text-center">${base.filter(t => t.status !== 'Concluído').length}</td>
+                <td class="p-2 text-center ${base.some(t => t.status !== 'Concluído' && t.prazo < hoje) ? 'text-red-700' : 'text-neutral-400'}">${base.filter(t => t.status !== 'Concluído' && t.prazo < hoje).length}</td>
+              </tr>
+            </tfoot>
+          </table>`;
+      }
+
+      // --- Pontos de atenção ---
+      const em7 = new Date(); em7.setDate(em7.getDate() + 7);
+      const limite7 = dataLocalISO(em7);
+      const porPrazo = (a, b) => a.prazo.localeCompare(b.prazo);
+      const atrasadas = lista.filter(t => t.status !== 'Concluído' && t.prazo < hoje).sort(porPrazo);
+      const proximas = lista.filter(t => t.status !== 'Concluído' && t.prazo >= hoje && t.prazo <= limite7).sort(porPrazo);
+      const pausadas = lista.filter(t => t.status === 'Em Pausa' && t.prazo > limite7).sort(porPrazo);
+      const nomeProjeto = id => { const p = projetos.find(x => x.id === id); return p ? p.nome : ''; };
+      const item = (t, rotuloPrazo, corPrazo) => `
+        <div class="p-3 flex justify-between gap-3 text-xs">
+          <div class="min-w-0">
+            <p class="font-bold text-neutral-900 truncate" title="${escaparHtml(t.titulo)}">${escaparHtml(t.titulo)}</p>
+            <p class="text-[11px] text-neutral-500 truncate">${escaparHtml(nomeProjeto(t.projetoId))} · ${escaparHtml(nomeDe(t.colaboradorId))}</p>
+          </div>
+          <div class="text-right shrink-0 space-y-1">
+            <p class="text-[11px] font-bold ${corPrazo}">${rotuloPrazo}</p>
+            ${badgeStatus(t.status)}
+          </div>
+        </div>`;
+      const grupo = (titulo, itens) => itens.length
+        ? `<div class="px-3 py-1.5 bg-neutral-50 text-[10px] font-black uppercase text-neutral-600 sticky top-0">${titulo} (${itens.length})</div>${itens.join('')}`
+        : '';
+      const htmlAtencao = [
+        grupo('Atrasadas', atrasadas.map(t => { const d = -diasAte(t.prazo, hoje); return item(t, `${d} dia${d > 1 ? 's' : ''} de atraso`, 'text-red-700'); })),
+        grupo('Próximos 7 dias', proximas.map(t => { const d = diasAte(t.prazo, hoje); return item(t, d === 0 ? 'Vence hoje' : d === 1 ? 'Vence amanhã' : `Vence em ${d} dias`, d <= 1 ? 'text-amber-700' : 'text-neutral-700'); })),
+        grupo('Em pausa', pausadas.map(t => item(t, `Prazo ${formatarData(t.prazo)}`, 'text-neutral-600')))
+      ].join('');
+      document.getElementById('andamento-atencao').innerHTML = htmlAtencao ||
+        '<p class="p-4 text-xs text-emerald-700 font-semibold text-center">Nenhum atraso, pausa ou entrega nos próximos 7 dias.</p>';
+    }
+
+    function renderizarEstruturaPilares() {
+      const lista = document.getElementById('lista-projetos-pilares');
+      lista.innerHTML = projetos.map(p => {
+        const pilares = p.pilares.map(pil => {
+          const orcado = Number(pil.orcado || 0);
+          const gasto = gastoDoPilar(pil.id);
+          const saldo = saldoDoPilar(pil);
+          const pct = orcado > 0 ? Math.min((gasto / orcado) * 100, 100) : (gasto > 0 ? 100 : 0);
+          return `
+            <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+              <div class="flex flex-wrap justify-between items-center gap-2 text-xs">
+                <span class="font-bold text-neutral-900">${escaparHtml(pil.nome)}</span>
+                <span class="font-bold ${saldo < 0 ? 'text-red-700' : 'text-emerald-700'}">Saldo: ${formatarMoeda(saldo)}</span>
+              </div>
+              <div class="mt-2 h-1.5 bg-neutral-200 rounded overflow-hidden">
+                <div class="h-full ${saldo < 0 ? 'bg-red-600' : 'bg-neutral-700'}" style="width: ${pct}%"></div>
+              </div>
+              <div class="mt-1 text-[11px] text-neutral-600">Orçado: <strong>${formatarMoeda(orcado)}</strong> | Gasto: <strong>${formatarMoeda(gasto)}</strong></div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="border border-neutral-200 rounded-xl p-4 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-2">
+              <h3 class="font-black text-sm text-neutral-900">${escaparHtml(p.nome)}</h3>
+              ${usuarioLogado.role === 'gestor' ? `<button onclick="abrirModalNovoPilar('${p.id}')" class="px-3 py-1.5 border border-neutral-300 rounded text-xs font-bold hover:bg-neutral-100">+ Novo Pilar</button>` : ''}
+            </div>
+            ${pilares || '<p class="text-xs text-neutral-400">Nenhum pilar cadastrado.</p>'}
+            ${typeof kpiBlocoProjeto === 'function' ? kpiBlocoProjeto(p) : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function atualizarPilaresNovaTarefa() {
+      preencherSelectPilares('novaTarProjeto', 'novaTarPilar');
+    }
+
+    function atualizarSelectPilaresGasto() {
+      preencherSelectPilares('gastoProjeto', 'gastoPilar');
+      document.getElementById('infoSaldoPilarGasto').textContent = "";
+    }
+
+    function exibirSaldoDisponivelPilarGasto() {
+      const { pilar } = buscarPilar(document.getElementById('gastoProjeto').value, document.getElementById('gastoPilar').value);
+      document.getElementById('infoSaldoPilarGasto').textContent = pilar ? `Saldo disponível: ${formatarMoeda(saldoDoPilar(pilar))}` : "";
+    }
+
+    // ===== FLUXO DE EXECUÇÃO DAS ATIVIDADES =====
+    // A Fazer → [Iniciar] → Em Produção → [Pausar | Enviar p/ aprovação | Concluir]
+    // Em Pausa → [Retomar] → Em Produção · Aprovação → [Aprovar | Devolver] (gestão)
+    // O tempo é registrado pelo servidor (data/hora exata) em cada início, pausa e finalização.
+
+    let tarefaDetalheAbertaId = null;
+
+    const TIPOS_ANOTACAO = {
+      anotacao: { rotulo: 'Anotação', classe: 'bg-neutral-100 text-neutral-700' },
+      pausa: { rotulo: 'Pausa', classe: 'bg-neutral-800 text-white' },
+      sem_atividade: { rotulo: 'Sem nova atividade', classe: 'bg-amber-100 text-amber-800' },
+      devolucao: { rotulo: 'Devolução', classe: 'bg-red-100 text-red-800' },
+      transferencia: { rotulo: 'Transferência', classe: 'bg-violet-100 text-violet-800' },
+      sistema: { rotulo: 'Sistema', classe: 'bg-sky-100 text-sky-800' }
+    };
+
+    const ESTILOS_BOTAO = {
+      neutro: 'border border-neutral-300 hover:bg-neutral-100 text-neutral-800',
+      escuro: 'bg-neutral-700 hover:bg-neutral-600 text-white',
+      vermelho: 'bg-red-600 hover:bg-red-700 text-white',
+      ambar: 'bg-amber-500 hover:bg-amber-600 text-white',
+      verde: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+      preto: 'bg-black hover:bg-neutral-800 text-white'
+    };
+
+    function ehResponsavel(t) {
+      return !!usuarioLogado && usuarioLogado.role !== 'diretoria' && t.colaboradorId === usuarioLogado.id;
+    }
+
+    // Quem pode iniciar/pausar/concluir: o responsável ou a gestão (em qualquer atividade)
+    function podeExecutar(t) {
+      return ehResponsavel(t) || (!!usuarioLogado && usuarioLogado.role === 'gestor');
+    }
+
+    // Gestão agindo numa atividade de outra pessoa
+    function agindoEmNomeDe(t) {
+      return usuarioLogado.role === 'gestor' && t.colaboradorId !== usuarioLogado.id;
+    }
+
+    function nomeUsuario(id) {
+      const u = usuarios.find(x => x.id === id) || equipeAtribuivel.find(x => x.id === id);
+      return u ? u.nome : 'N/A';
+    }
+
+    // Botões disponíveis conforme o status da atividade e o perfil de quem está vendo
+    function botoesAcaoTarefa(t, fundoEscuro = false) {
+      const b = (rotulo, acao, estilo) => `<button type="button" onclick="${acao}" class="px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap ${ESTILOS_BOTAO[estilo]}">${rotulo}</button>`;
+      const gestor = !!usuarioLogado && usuarioLogado.role === 'gestor';
+      if (t.status === 'Aprovação') {
+        if (gestor) {
+          return [
+            b('✓ Aprovar', `aprovarTarefa('${t.id}')`, 'verde'),
+            b('↩ Devolver', `devolverTarefa('${t.id}')`, fundoEscuro ? 'escuro' : 'neutro')
+          ].join('');
+        }
+        return ehResponsavel(t) ? `<span class="text-[10px] font-semibold ${fundoEscuro ? 'text-amber-300' : 'text-amber-700'}">Aguardando aprovação da gestão</span>` : '';
+      }
+      if (!podeExecutar(t)) return '';
+      if (t.status === 'A Fazer') return b('▶ Iniciar', `iniciarTarefa('${t.id}')`, 'vermelho');
+      if (t.status === 'Em Pausa') return b('▶ Retomar', `iniciarTarefa('${t.id}')`, 'vermelho');
+      if (t.status === 'Em Produção') {
+        // "Concluir" pergunta se precisa de aprovação (Sim → coluna Em Aprovação; Não → Concluído)
+        return [
+          b('⏸ Pausar', `abrirModalPausa('${t.id}')`, fundoEscuro ? 'escuro' : 'neutro'),
+          b('✓ Concluir', `concluirTarefa('${t.id}')`, 'verde')
+        ].join('');
+      }
+      return '';
+    }
+
+    // Diálogo genérico. Retorna Promise<{ valor, texto }>; valor null = cancelado.
+    let resolverDialogo = null;
+    // campoSelecao: { rotulo, opcoes: [{ valor, rotulo }], obrigatorio } → resultado.selecao
+    function abrirDialogo({ titulo, mensagem = '', campoTexto = null, campoSelecao = null, botoes }) {
+      document.getElementById('dialogoTitulo').textContent = titulo;
+      document.getElementById('dialogoMensagem').textContent = mensagem;
+      const blocoSelecao = document.getElementById('dialogoBlocoSelecao');
+      const selecao = document.getElementById('dialogoSelecao');
+      blocoSelecao.classList.toggle('hidden', !campoSelecao);
+      selecao.innerHTML = '';
+      if (campoSelecao) {
+        document.getElementById('dialogoRotuloSelecao').textContent = campoSelecao.rotulo;
+        campoSelecao.opcoes.forEach(o => {
+          const opt = document.createElement('option');
+          opt.value = o.valor;
+          opt.textContent = o.rotulo;
+          selecao.appendChild(opt);
+        });
+      }
+      const blocoTexto = document.getElementById('dialogoBlocoTexto');
+      const texto = document.getElementById('dialogoTexto');
+      texto.value = '';
+      blocoTexto.classList.toggle('hidden', !campoTexto);
+      if (campoTexto) {
+        document.getElementById('dialogoRotuloTexto').textContent = campoTexto.rotulo;
+        texto.placeholder = campoTexto.placeholder || '';
+      }
+      const area = document.getElementById('dialogoBotoes');
+      area.innerHTML = '';
+      return new Promise(resolve => {
+        resolverDialogo = resolve;
+        botoes.forEach(bt => {
+          const el = document.createElement('button');
+          el.type = 'button';
+          el.textContent = bt.rotulo;
+          el.className = `px-3 py-1.5 rounded text-xs font-bold ${ESTILOS_BOTAO[bt.estilo || 'neutro']}`;
+          el.onclick = () => {
+            const valorTexto = texto.value.trim();
+            const valorSelecao = campoSelecao ? selecao.value : null;
+            if (bt.valor !== null && campoSelecao && campoSelecao.obrigatorio && !valorSelecao) {
+              notificar(`Selecione: ${campoSelecao.rotulo.replace(/\s*\*$/, '')}.`, 'erro');
+              selecao.focus();
+              return;
+            }
+            if (bt.valor !== null && campoTexto && campoTexto.obrigatorio && !valorTexto) {
+              notificar(`Preencha: ${campoTexto.rotulo.replace(/\s*\*$/, '')}.`, 'erro');
+              texto.focus();
+              return;
+            }
+            fecharDialogo({ valor: bt.valor, texto: valorTexto, selecao: valorSelecao });
+          };
+          area.appendChild(el);
+        });
+        document.getElementById('modalDialogo').classList.remove('hidden');
+        (campoSelecao ? selecao : campoTexto ? texto : area.lastElementChild).focus();
+      });
+    }
+
+    function fecharDialogo(resultado = { valor: null, texto: '' }) {
+      document.getElementById('modalDialogo').classList.add('hidden');
+      if (resolverDialogo) { const r = resolverDialogo; resolverDialogo = null; r(resultado); }
+    }
+
+    // Executa uma ação do fluxo no banco e atualiza a tela
+    async function executarAcaoTarefa(funcao, parametros, mensagemSucesso) {
+      const { error } = await clienteSupabase.rpc(funcao, parametros);
+      if (error) {
+        notificar(mensagemErro(error), 'erro');
+        return false;
+      }
+      notificar(mensagemSucesso);
+      await recarregarDados();
+      if (tarefaDetalheAbertaId) await abrirDetalheTarefa(tarefaDetalheAbertaId);
+      return true;
+    }
+
+    async function iniciarTarefa(id) {
+      const t = tarefas.find(x => x.id === id);
+      if (!t) return;
+      // Já existe outra em produção para o mesmo responsável? Oferece pausar a atual e iniciar esta
+      const atual = tarefas.find(x => x.id !== id && x.colaboradorId === t.colaboradorId && x.status === 'Em Produção');
+      if (atual) {
+        const quem = t.colaboradorId === usuarioLogado.id ? 'Você já tem' : `${nomeUsuario(t.colaboradorId)} já tem`;
+        const r = await abrirDialogo({
+          titulo: 'Já existe uma atividade em produção',
+          mensagem: `${quem} "${atual.titulo}" em produção. Para iniciar "${t.titulo}", é preciso pausar a atividade atual.`,
+          botoes: [
+            { rotulo: 'Cancelar', valor: null },
+            { rotulo: 'Pausar a atual e iniciar esta', valor: 'pausar', estilo: 'vermelho' }
+          ]
+        });
+        if (r.valor === 'pausar') abrirModalPausa(atual.id, id);
+        return;
+      }
+      if (agindoEmNomeDe(t)) {
+        const r = await abrirDialogo({
+          titulo: `${t.status === 'Em Pausa' ? 'Retomar' : 'Iniciar'} em nome de ${nomeUsuario(t.colaboradorId)}?`,
+          mensagem: `O tempo passará a ser registrado em "${t.titulo}", que é de ${nomeUsuario(t.colaboradorId)}. O histórico indicará que a ação foi feita pela gestão.`,
+          botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: t.status === 'Em Pausa' ? 'Retomar' : 'Iniciar', valor: 'ok', estilo: 'vermelho' }]
+        });
+        if (r.valor !== 'ok') return;
+      }
+      await executarAcaoTarefa('iniciar_tarefa', { p_tarefa_id: id },
+        t.status === 'Em Pausa' ? 'Atividade retomada. O tempo está sendo registrado.' : 'Atividade iniciada. O tempo está sendo registrado.');
+    }
+
+    async function enviarParaAprovacao(id) {
+      await executarAcaoTarefa('enviar_tarefa_aprovacao', { p_tarefa_id: id }, 'Atividade enviada para aprovação da gestão.');
+    }
+
+    async function concluirTarefa(id) {
+      const t = tarefas.find(x => x.id === id);
+      if (!t) return;
+      const deQuem = agindoEmNomeDe(t) ? ` (de ${nomeUsuario(t.colaboradorId)})` : '';
+      const r = await abrirDialogo({
+        titulo: 'Esta atividade precisa de aprovação?',
+        mensagem: `"${t.titulo}"${deQuem}\n\n• Sim: vai para a coluna "Em Aprovação" e aguarda a aprovação da gestão.\n• Não: é marcada como concluída agora.`,
+        botoes: [
+          { rotulo: 'Cancelar', valor: null },
+          { rotulo: 'Não, concluir agora', valor: 'concluir', estilo: 'verde' },
+          { rotulo: 'Sim, enviar para aprovação', valor: 'aprovacao', estilo: 'ambar' }
+        ]
+      });
+      if (r.valor === 'aprovacao') await enviarParaAprovacao(id);
+      else if (r.valor === 'concluir') await executarAcaoTarefa('concluir_tarefa', { p_tarefa_id: id }, 'Atividade concluída.');
+    }
+
+    async function aprovarTarefa(id) {
+      await executarAcaoTarefa('aprovar_tarefa', { p_tarefa_id: id }, 'Atividade aprovada e concluída.');
+    }
+
+    async function devolverTarefa(id) {
+      const t = tarefas.find(x => x.id === id);
+      if (!t) return;
+      const r = await abrirDialogo({
+        titulo: 'Devolver para ajustes',
+        mensagem: `"${t.titulo}" volta para "Em Pausa" e o responsável poderá retomá-la.`,
+        campoTexto: { rotulo: 'O que precisa ser ajustado? *', placeholder: 'Descreva os ajustes necessários', obrigatorio: true },
+        botoes: [
+          { rotulo: 'Cancelar', valor: null },
+          { rotulo: 'Devolver', valor: 'devolver', estilo: 'vermelho' }
+        ]
+      });
+      if (r.valor === 'devolver') {
+        await executarAcaoTarefa('devolver_tarefa', { p_tarefa_id: id, p_motivo: r.texto }, 'Atividade devolvida ao responsável.');
+      }
+    }
+
+    // --- Pausa ---
+    function abrirModalPausa(id, proximaPreferidaId = null) {
+      const t = tarefas.find(x => x.id === id);
+      if (!t) return;
+      document.querySelector('#modalPausa form').reset();
+      document.getElementById('pausaTarefaId').value = id;
+      document.getElementById('pausaTituloTarefa').textContent = agindoEmNomeDe(t)
+        ? `${t.titulo} — de ${nomeUsuario(t.colaboradorId)} (pausa registrada pela gestão)`
+        : t.titulo;
+
+      // Outras atividades do mesmo responsável que podem ser iniciadas
+      const opcoes = tarefas
+        .filter(x => x.id !== id && x.colaboradorId === t.colaboradorId && (x.status === 'A Fazer' || x.status === 'Em Pausa'))
+        .sort((a, b) => (a.status === 'Em Pausa' ? 0 : 1) - (b.status === 'Em Pausa' ? 0 : 1) || a.prazo.localeCompare(b.prazo));
+      document.getElementById('pausaProximaTarefa').innerHTML = '<option value="">Selecione a atividade...</option>' +
+        opcoes.map(x => `<option value="${x.id}">${escaparHtml(x.titulo)} — ${escaparHtml(rotuloStatus(x.status))} · prazo ${formatarData(x.prazo)}</option>`).join('');
+      document.getElementById('pausaBlocoProxima').classList.toggle('hidden', opcoes.length === 0);
+      document.getElementById('pausaSemOpcoes').classList.toggle('hidden', opcoes.length > 0);
+
+      if (proximaPreferidaId && opcoes.some(x => x.id === proximaPreferidaId)) {
+        document.querySelector('input[name="pausaIniciarOutra"][value="sim"]').checked = true;
+        document.getElementById('pausaProximaTarefa').value = proximaPreferidaId;
+      }
+      atualizarFormPausa();
+      document.getElementById('modalPausa').classList.remove('hidden');
+      document.getElementById('pausaMotivo').focus();
+    }
+
+    function fecharModalPausa() { document.getElementById('modalPausa').classList.add('hidden'); }
+
+    function atualizarFormPausa() {
+      const marcado = document.querySelector('input[name="pausaIniciarOutra"]:checked');
+      const escolha = marcado ? marcado.value : null;
+      document.getElementById('pausaCampoProxima').classList.toggle('hidden', escolha !== 'sim');
+      document.getElementById('pausaCampoSemProxima').classList.toggle('hidden', escolha !== 'nao');
+      document.getElementById('pausaProximaTarefa').required = escolha === 'sim';
+      document.getElementById('pausaMotivoSemProxima').required = escolha === 'nao';
+      if (escolha === 'nao') document.getElementById('pausaMotivoSemProxima').focus();
+    }
+
+    async function confirmarPausa(e) {
+      e.preventDefault();
+      const id = document.getElementById('pausaTarefaId').value;
+      const motivo = document.getElementById('pausaMotivo').value.trim();
+      const temOpcoes = !document.getElementById('pausaBlocoProxima').classList.contains('hidden');
+      const marcado = document.querySelector('input[name="pausaIniciarOutra"]:checked');
+      const escolha = marcado ? marcado.value : null;
+
+      if (!motivo) { notificar('Informe o motivo da pausa.', 'erro'); return; }
+      if (temOpcoes && !escolha) { notificar('Responda se deseja iniciar outra atividade agora.', 'erro'); return; }
+      const proximaId = escolha === 'sim' ? document.getElementById('pausaProximaTarefa').value : null;
+      const motivoSemProxima = escolha === 'nao' ? document.getElementById('pausaMotivoSemProxima').value.trim() : null;
+      if (escolha === 'sim' && !proximaId) { notificar('Selecione a atividade que deseja iniciar.', 'erro'); return; }
+      if (escolha === 'nao' && !motivoSemProxima) { notificar('Informe por que não vai iniciar outra atividade agora.', 'erro'); return; }
+
+      await comBotaoOcupado(e, async () => {
+        const { error } = await clienteSupabase.rpc('pausar_tarefa', {
+          p_tarefa_id: id,
+          p_motivo: motivo,
+          p_proxima_tarefa_id: proximaId,
+          p_motivo_sem_proxima: motivoSemProxima
+        });
+        if (error) { notificar(mensagemErro(error), 'erro'); return; }
+        fecharModalPausa();
+        const proxima = proximaId ? tarefas.find(x => x.id === proximaId) : null;
+        notificar(proxima ? `Atividade pausada. "${proxima.titulo}" foi iniciada.` : 'Atividade pausada.');
+        await recarregarDados();
+        if (tarefaDetalheAbertaId) await abrirDetalheTarefa(tarefaDetalheAbertaId);
+      });
+    }
+
+    // --- Detalhe da atividade, anotações e sessões ---
+    async function abrirDetalheTarefa(id) {
+      const t = tarefas.find(x => x.id === id);
+      if (!t) { fecharDetalheTarefa(); return; }
+      tarefaDetalheAbertaId = id;
+      const pr = projetos.find(p => p.id === t.projetoId);
+      const pi = pr ? pr.pilares.find(p => p.id === t.pilarId) : null;
+      const hoje = dataLocalISO();
+      const atrasada = t.status !== 'Concluído' && t.prazo < hoje;
+      const gestor = usuarioLogado.role === 'gestor';
+
+      document.getElementById('detalheProjeto').textContent = `${pr ? pr.nome : ''}${pi ? ' · ' + pi.nome : ''}`;
+      document.getElementById('detalheTitulo').textContent = t.titulo;
+      document.getElementById('detalheDescricao').textContent = t.descricao || '';
+      document.getElementById('detalheDescricao').classList.toggle('hidden', !t.descricao);
+
+      const item = (rotulo, valor) => `<div class="p-2 rounded bg-neutral-50 border border-neutral-200"><p class="text-[10px] uppercase font-bold text-neutral-500">${rotulo}</p><div class="font-bold text-neutral-900 mt-0.5">${valor}</div></div>`;
+      document.getElementById('detalheResumo').innerHTML = [
+        item('Responsável', escaparHtml(nomeUsuario(t.colaboradorId))),
+        item('Status', badgeStatus(t.status)),
+        item('Prioridade', escaparHtml(t.prioridade || 'Média')),
+        item('Prazo', `<span class="${atrasada ? 'text-red-700' : ''}">${formatarData(t.prazo)}${atrasada ? ' (atrasada)' : ''}</span>`),
+        item('Horas consumidas / previstas', `<span class="${t.tempo_estimado > 0 && t.tempo_gasto > t.tempo_estimado ? 'text-red-700' : ''}">${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}</span>`),
+        t.status === 'Em Produção' && t.sessaoIniciadaEm
+          ? item('Sessão atual', `<span class="font-mono text-red-600 tabular-nums" data-cronometro="${t.sessaoIniciadaEm}">${fmtCronometro(t.sessaoIniciadaEm)}</span>`)
+          : item('Iniciada em', fmtDataHora(t.iniciadoEm)),
+        ...(t.status === 'Em Produção' && t.sessaoIniciadaEm ? [item('Iniciada em', fmtDataHora(t.iniciadoEm))] : []),
+        ...(t.concluidoEm ? [item('Concluída em', fmtDataHora(t.concluidoEm))] : [])
+      ].join('');
+
+      // Quem trabalhou nesta atividade (relevante após transferências)
+      const executores = [...horasPorExecutor([t]).entries()].sort((a, b) => b[1] - a[1]);
+      if (executores.length > 1 || (executores.length === 1 && executores[0][0] !== t.colaboradorId)) {
+        document.getElementById('detalheResumo').insertAdjacentHTML('beforeend', `
+          <div class="p-2 rounded bg-violet-50 border border-violet-200 col-span-2 sm:col-span-3">
+            <p class="text-[10px] uppercase font-bold text-violet-700">Horas por quem executou</p>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-0.5 font-bold text-neutral-900">
+              ${executores.map(([id, h]) => `<span>${escaparHtml(nomeUsuario(id))}: ${fmtHoras(h)}${id === t.colaboradorId ? ' <span class="text-[10px] font-semibold text-neutral-500">(responsável atual)</span>' : ''}</span>`).join('')}
+            </div>
+          </div>`);
+      }
+
+      const acoes = botoesAcaoTarefa(t);
+      const transferir = gestor ? `<button type="button" onclick="transferirTarefa('${t.id}')" class="px-2 py-1 rounded text-[11px] font-bold ${ESTILOS_BOTAO.neutro}">⇄ Transferir responsável</button>` : '';
+      const excluir = gestor ? `<button type="button" onclick="excluirTarefaGestor('${t.id}')" class="px-2 py-1 rounded text-[11px] font-bold ${ESTILOS_BOTAO.neutro} text-red-700 ml-auto">Excluir atividade</button>` : '';
+      document.getElementById('detalheAcoes').innerHTML = acoes + transferir + excluir;
+      document.getElementById('detalheAcoes').classList.toggle('hidden', !acoes && !excluir);
+
+      document.getElementById('formNovaAnotacao').classList.toggle('hidden', !(ehResponsavel(t) || gestor));
+      document.getElementById('detalheAnotacoes').innerHTML = '<p class="text-xs text-neutral-400">Carregando anotações...</p>';
+      document.getElementById('detalheSessoes').innerHTML = '<p class="text-neutral-400">Carregando...</p>';
+      document.getElementById('modalDetalheTarefa').classList.remove('hidden');
+
+      const [resNotas, resSessoes] = await Promise.all([
+        clienteSupabase.from('tarefa_anotacoes').select('*').eq('tarefa_id', id).order('criado_em', { ascending: false }),
+        clienteSupabase.from('tarefa_sessoes').select('*').eq('tarefa_id', id).order('inicio', { ascending: false })
+      ]);
+      if (tarefaDetalheAbertaId !== id) return;
+
+      const alvoNotas = document.getElementById('detalheAnotacoes');
+      if (resNotas.error) {
+        alvoNotas.innerHTML = `<p class="text-xs text-red-700">Não foi possível carregar as anotações: ${escaparHtml(mensagemErro(resNotas.error))}</p>`;
+      } else if (resNotas.data.length === 0) {
+        alvoNotas.innerHTML = '<p class="text-xs text-neutral-400">Nenhuma anotação ainda.</p>';
+      } else {
+        alvoNotas.innerHTML = resNotas.data.map(n => {
+          const tipo = TIPOS_ANOTACAO[n.tipo] || TIPOS_ANOTACAO.anotacao;
+          return `
+            <div class="p-3 rounded-lg border ${n.tipo === 'sistema' ? 'border-dashed border-neutral-200 bg-neutral-50' : 'border-neutral-200 bg-white'}">
+              <div class="flex justify-between items-center gap-2 mb-1">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+                  <span class="px-1.5 py-0.5 rounded font-bold ${tipo.classe}">${tipo.rotulo}</span>
+                  <strong class="text-neutral-800">${escaparHtml(n.autor_nome)}</strong>
+                  <span>${fmtDataHora(n.criado_em)}</span>
+                </div>
+                ${gestor ? `<button type="button" onclick="excluirAnotacao('${n.id}')" class="text-[10px] text-red-600 font-bold hover:underline shrink-0">Apagar</button>` : ''}
+              </div>
+              <p class="text-xs text-neutral-800 whitespace-pre-line break-words">${escaparHtml(n.texto)}</p>
+            </div>`;
+        }).join('');
+      }
+
+      const alvoSessoes = document.getElementById('detalheSessoes');
+      if (resSessoes.error) {
+        alvoSessoes.innerHTML = `<p class="text-red-700">${escaparHtml(mensagemErro(resSessoes.error))}</p>`;
+      } else if (resSessoes.data.length === 0) {
+        alvoSessoes.innerHTML = '<p class="text-neutral-400">Nenhuma sessão registrada. O tempo começa a contar quando a atividade é iniciada.</p>';
+      } else {
+        const fimSessao = { pausa: 'Pausa', aprovacao: 'Enviada p/ aprovação', conclusao: 'Concluída', transferencia: 'Transferida', bloqueio: 'Responsável bloqueado' };
+        alvoSessoes.innerHTML = `
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-[11px] text-neutral-700">
+              <thead class="text-[10px] uppercase text-neutral-500 border-b border-neutral-200"><tr><th class="py-1.5 pr-2">Início</th><th class="py-1.5 pr-2">Fim</th><th class="py-1.5 pr-2 text-right">Duração</th><th class="py-1.5">Encerramento</th></tr></thead>
+              <tbody class="divide-y divide-neutral-100">
+                ${resSessoes.data.map(s => `
+                  <tr>
+                    <td class="py-1.5 pr-2 whitespace-nowrap">${fmtDataHora(s.inicio)}</td>
+                    <td class="py-1.5 pr-2 whitespace-nowrap">${s.fim ? fmtDataHora(s.fim) : '<span class="text-red-600 font-bold">em andamento</span>'}</td>
+                    <td class="py-1.5 pr-2 text-right whitespace-nowrap font-bold">${s.fim ? fmtHoras((Date.parse(s.fim) - Date.parse(s.inicio)) / 3600000) : `<span class="font-mono tabular-nums" data-cronometro="${s.inicio}">${fmtCronometro(s.inicio)}</span>`}</td>
+                    <td class="py-1.5">${s.encerramento ? fimSessao[s.encerramento] || s.encerramento : '—'}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      }
+    }
+
+    function fecharDetalheTarefa() {
+      tarefaDetalheAbertaId = null;
+      document.getElementById('modalDetalheTarefa').classList.add('hidden');
+    }
+
+    async function salvarAnotacao(e) {
+      e.preventDefault();
+      const id = tarefaDetalheAbertaId;
+      const campo = document.getElementById('novaAnotacaoTexto');
+      const texto = campo.value.trim();
+      if (!id || !texto) return;
+      await comBotaoOcupado(e, async () => {
+        const { error } = await clienteSupabase.rpc('adicionar_anotacao', { p_tarefa_id: id, p_texto: texto });
+        if (error) { notificar(`Não foi possível salvar a anotação: ${mensagemErro(error)}`, 'erro'); return; }
+        campo.value = '';
+        notificar('Anotação registrada.');
+        await abrirDetalheTarefa(id);
+      });
+    }
+
+    async function excluirAnotacao(anotacaoId) {
+      if (!usuarioPodeGerir()) return;
+      const r = await abrirDialogo({
+        titulo: 'Apagar anotação?',
+        mensagem: 'Esta anotação será removida definitivamente do histórico da atividade.',
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Apagar', valor: 'apagar', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'apagar') return;
+      const { data, error } = await clienteSupabase.from('tarefa_anotacoes').delete().eq('id', anotacaoId).select('id');
+      if (error || !data || data.length === 0) {
+        notificar(`Não foi possível apagar a anotação: ${error ? mensagemErro(error) : 'sem permissão.'}`, 'erro');
+        return;
+      }
+      notificar('Anotação apagada.');
+      if (tarefaDetalheAbertaId) await abrirDetalheTarefa(tarefaDetalheAbertaId);
+    }
+
+    async function excluirTarefaGestor(id) {
+      if (!usuarioPodeGerir()) return;
+      const t = tarefas.find(x => x.id === id);
+      const r = await abrirDialogo({
+        titulo: 'Excluir atividade?',
+        mensagem: `"${t ? t.titulo : ''}" será excluída junto com suas anotações e sessões de trabalho. Esta ação não pode ser desfeita.`,
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Excluir', valor: 'excluir', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'excluir') return;
+      const { error } = await clienteSupabase.from('tarefas').delete().eq('id', id);
+      if (error) {
+        notificar(`Não foi possível excluir a atividade: ${mensagemErro(error)}`, 'erro');
+        return;
+      }
+      if (tarefaDetalheAbertaId === id) fecharDetalheTarefa();
+      notificar('Atividade excluída.');
+      await recarregarDados();
+    }
+
+    // Esc fecha a janela aberta mais acima
+    document.addEventListener('keydown', ev => {
+      if (ev.key !== 'Escape') return;
+      if (!document.getElementById('modalDialogo').classList.contains('hidden')) fecharDialogo();
+      else if (!document.getElementById('modalPausa').classList.contains('hidden')) fecharModalPausa();
+      else if (!document.getElementById('modalDetalheTarefa').classList.contains('hidden')) fecharDetalheTarefa();
+    });
+
+    // ===== TRANSFERÊNCIA DE RESPONSÁVEL (GESTÃO) =====
+    // Opções de novo responsável: membros ativos (colaboradores e gestão), exceto quem já é o responsável
+    function opcoesNovoResponsavel(excetoId) {
+      return equipeAtribuivel
+        .filter(u => u.id !== excetoId)
+        .map(u => ({ valor: u.id, rotulo: `${u.nome} (${u.cargo})${u.role === 'admin' ? ' · Gestão' : ''}${u.id === usuarioLogado.id ? ' — você' : ''}` }));
+    }
+
+    function resumoAtividades(lista, limite = 5) {
+      const linhas = lista.slice(0, limite).map(t => `• ${t.titulo} (${rotuloStatus(t.status)})`);
+      if (lista.length > limite) linhas.push(`• … e mais ${lista.length - limite}`);
+      return linhas.join('\n');
+    }
+
+    async function transferirTarefa(id) {
+      if (!usuarioPodeGerir()) return;
+      const t = tarefas.find(x => x.id === id);
+      if (!t) return;
+      const opcoes = opcoesNovoResponsavel(t.colaboradorId);
+      if (opcoes.length === 0) { notificar('Não há outro membro ativo para receber a atividade.', 'erro'); return; }
+      const r = await abrirDialogo({
+        titulo: 'Transferir responsável',
+        mensagem: `"${t.titulo}"\nResponsável atual: ${nomeUsuario(t.colaboradorId)} · Status: ${rotuloStatus(t.status)}`
+          + (t.tempo_gasto > 0 ? `\nAs ${fmtHoras(t.tempo_gasto)} já trabalhadas continuam contando para quem as executou.` : '')
+          + (t.status === 'Em Produção' ? '\n\nEla está em produção: o cronômetro atual será encerrado e a atividade ficará "Em Pausa" para o novo responsável retomar.' : ''),
+        campoSelecao: { rotulo: 'Novo responsável *', opcoes: [{ valor: '', rotulo: 'Selecione...' }, ...opcoes], obrigatorio: true },
+        campoTexto: { rotulo: 'Motivo da transferência *', placeholder: 'Ex: redistribuição de carga, férias, especialidade', obrigatorio: true },
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Transferir', valor: 'ok', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'ok') return;
+      await executarAcaoTarefa('transferir_tarefa', { p_tarefa_id: id, p_novo_responsavel: r.selecao, p_motivo: r.texto },
+        `Atividade transferida para ${nomeUsuario(r.selecao)}.`);
+    }
+
+    // Transfere todas as atividades em aberto de um usuário (ex.: férias, desligamento)
+    async function transferirAtividadesUsuario(usuarioId) {
+      if (!usuarioPodeGerir()) return;
+      const u = usuarios.find(x => x.id === usuarioId);
+      const abertas = tarefas.filter(t => t.colaboradorId === usuarioId && t.status !== 'Concluído');
+      if (!u || abertas.length === 0) return;
+      const opcoes = opcoesNovoResponsavel(usuarioId);
+      if (opcoes.length === 0) { notificar('Não há outro membro ativo para receber as atividades.', 'erro'); return; }
+      const r = await abrirDialogo({
+        titulo: `Transferir atividades de ${u.nome}`,
+        mensagem: `${abertas.length} atividade(s) em aberto serão transferidas:\n${resumoAtividades(abertas)}`
+          + (abertas.some(t => t.status === 'Em Produção') ? '\n\nAs que estiverem em produção serão pausadas para o novo responsável retomar.' : ''),
+        campoSelecao: { rotulo: 'Transferir todas para *', opcoes: [{ valor: '', rotulo: 'Selecione...' }, ...opcoes], obrigatorio: true },
+        campoTexto: { rotulo: 'Motivo (opcional)', placeholder: 'Ex: férias, desligamento, redistribuição' },
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: `Transferir ${abertas.length}`, valor: 'ok', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'ok') return;
+      const { data, error } = await clienteSupabase.rpc('transferir_tarefas_usuario', { p_de: usuarioId, p_para: r.selecao, p_motivo: r.texto || null });
+      if (error) { notificar(`Não foi possível transferir: ${mensagemErro(error)}`, 'erro'); return; }
+      notificar(`${data} atividade(s) transferida(s) para ${nomeUsuario(r.selecao)}.`);
+      await recarregarDados();
+    }
+
+    async function alternarBloqueioUsuario(id) {
+      if (!usuarioPodeGerir()) return;
+      const u = usuarios.find(usr => usr.id === id);
+      if (!u || u.role === 'gestor') return;
+
+      // Desbloqueio: simples
+      if (u.status !== 'ativo') {
+        const { error } = await clienteSupabase.from('usuarios').update({ status: 'ativo' }).eq('id', id);
+        if (error) { notificar(`Não foi possível atualizar o acesso: ${mensagemErro(error)}`, 'erro'); return; }
+        notificar(`${u.nome} desbloqueado(a).`);
+        await recarregarDados();
+        return;
+      }
+
+      // Bloqueio: oferece transferir as atividades em aberto
+      const abertas = tarefas.filter(t => t.colaboradorId === id && t.status !== 'Concluído');
+      const emProducao = abertas.filter(t => t.status === 'Em Produção').length;
+      const r = await abrirDialogo({
+        titulo: `Bloquear ${u.nome}?`,
+        mensagem: abertas.length
+          ? `${u.nome} perderá o acesso à plataforma e tem ${abertas.length} atividade(s) em aberto:\n${resumoAtividades(abertas)}\n\nEscolha para quem transferir.`
+            + (emProducao ? ' Se não transferir, as que estão em produção serão pausadas.' : '')
+          : `${u.nome} perderá o acesso à plataforma. Não há atividades em aberto.`,
+        campoSelecao: abertas.length
+          ? { rotulo: 'Transferir atividades em aberto para', opcoes: [{ valor: '', rotulo: `Não transferir (manter com ${u.nome})` }, ...opcoesNovoResponsavel(id)] }
+          : null,
+        campoTexto: abertas.length ? { rotulo: 'Motivo (opcional)', placeholder: 'Ex: desligamento, férias' } : null,
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Bloquear', valor: 'ok', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'ok') return;
+
+      const para = r.selecao || null;
+      const { data, error } = await clienteSupabase.rpc('bloquear_usuario', { p_usuario_id: id, p_transferir_para: para, p_motivo: r.texto || null });
+      if (error) { notificar(`Não foi possível bloquear: ${mensagemErro(error)}`, 'erro'); return; }
+      notificar(para
+        ? `${u.nome} bloqueado(a). ${data} atividade(s) transferida(s) para ${nomeUsuario(para)}.`
+        : `${u.nome} bloqueado(a).${emProducao ? ' Atividades em produção foram pausadas.' : ''}`);
+      await recarregarDados();
+    }
+
+    function emailJaCadastrado(email) {
+      return usuarios.some(u => u.email.trim().toLowerCase() === email);
+    }
+
+    function abrirModalNovoUsuario() {
+      if (!usuarioPodeGerir()) return;
+      document.querySelector('#modalNovoUsuario form').reset();
+      document.getElementById('modalNovoUsuario').classList.remove('hidden');
+    }
+    function fecharModalNovoUsuario() { document.getElementById('modalNovoUsuario').classList.add('hidden'); }
+
+    async function salvarNovoUsuarioDireto(e) {
+      e.preventDefault();
+      if (!usuarioPodeGerir()) return;
+      const email = document.getElementById('usrEmail').value.trim().toLowerCase();
+      if (emailJaCadastrado(email)) {
+        alert("Já existe um usuário com este e-mail.");
+        return;
+      }
+      const role = document.getElementById('usrRole').value;
+      const perfilBanco = {
+        nome: document.getElementById('usrNome').value.trim(),
+        email: email,
+        cargo: document.getElementById('usrCargo').value.trim(),
+        modelo_contratacao: document.getElementById('usrContrato').value,
+        role: role === 'gestor' ? 'admin' : role,
+        status: 'ativo'
+      };
+      await comBotaoOcupado(e, async () => {
+        const { error } = await clienteSupabase.from('usuarios').insert(perfilBanco);
+        if (error) {
+          notificar(`Não foi possível cadastrar o perfil: ${mensagemErro(error)}`, 'erro');
+          return;
+        }
+        fecharModalNovoUsuario();
+        notificar(`Perfil de ${perfilBanco.nome} criado. Peça para a pessoa usar "Solicite cadastro" com este e-mail para definir a senha.`);
+        await recarregarDados();
+      });
+    }
+
+    function abrirModalSolicitacao() {
+      document.querySelector('#modalSolicitarCadastro form').reset();
+      document.getElementById('modalSolicitarCadastro').classList.remove('hidden');
+    }
+    function fecharModalSolicitacao() { document.getElementById('modalSolicitarCadastro').classList.add('hidden'); }
+
+    // A solicitação entra bloqueada e o gestor libera pelo botão "Desbloquear" da Gestão de Equipe
+    async function enviarSolicitacaoCadastro(e) {
+      e.preventDefault();
+      const email = document.getElementById('solEmail').value.trim().toLowerCase();
+      const { error } = await clienteSupabase.auth.signUp({
+        email,
+        password: document.getElementById('solSenha').value,
+        options: {
+          emailRedirectTo: urlDaAplicacao(),
+          data: {
+            nome: document.getElementById('solNome').value.trim(),
+            cargo: document.getElementById('solCargo').value.trim(),
+            modelo_contratacao: document.getElementById('solContrato').value
+          }
+        }
+      });
+      if (error) {
+        alert(`Não foi possível enviar a solicitação: ${error.message}`);
+        return;
+      }
+      fecharModalSolicitacao();
+      alert("Solicitação enviada. Confirme o e-mail e aguarde a liberação do gestor.");
+    }
+
+    function abrirModalNovoProjeto() {
+      if (!usuarioPodeGerir()) return;
+      document.getElementById('novoProjetoNome').value = "";
+      kpiGarantirModais(); // lista de unidades sugeridas
+      document.getElementById('novoProjetoKpis').innerHTML = '';
+      kpiAdicionarLinha('novoProjetoKpis');
+      document.getElementById('modalNovoProjeto').classList.remove('hidden');
+      document.getElementById('novoProjetoNome').focus();
+    }
+    function fecharModalNovoProjeto() { document.getElementById('modalNovoProjeto').classList.add('hidden'); }
+
+    async function salvarNovoProjeto(e) {
+      e.preventDefault();
+      if (!usuarioPodeGerir()) return;
+      const nome = document.getElementById('novoProjetoNome').value.trim();
+      const { itens: kpisNovos, erro } = kpiColetarLinhas('novoProjetoKpis');
+      if (erro) { notificar(erro, 'erro'); return; }
+      await comBotaoOcupado(e, async () => {
+        // Projeto + KPIs numa única transação
+        const { error } = await clienteSupabase.rpc('criar_projeto', { p_nome: nome, p_ano: new Date().getFullYear(), p_kpis: kpisNovos });
+        if (error) {
+          notificar(error.code === '23505' ? 'Já existe um projeto com esse nome.' : `Não foi possível criar o projeto: ${mensagemErro(error)}`, 'erro');
+          return;
+        }
+        fecharModalNovoProjeto();
+        notificar(`Projeto "${nome}" criado${kpisNovos.length ? ` com ${kpisNovos.length} KPI(s)` : ''}. Agora cadastre os pilares dele.`);
+        await recarregarDados();
+      });
+    }
+
+    function abrirModalNovoPilar(projetoId) {
+      if (!usuarioPodeGerir()) return;
+      const projeto = projetos.find(p => p.id === projetoId);
+      if (!projeto) return;
+      document.getElementById('modalPilarProjetoId').value = projeto.id;
+      document.getElementById('modalPilarNomeProjeto').textContent = projeto.nome;
+      document.getElementById('novoPilarNome').value = "";
+      document.getElementById('novoPilarValor').value = "";
+      document.getElementById('modalNovoPilar').classList.remove('hidden');
+    }
+    function fecharModalNovoPilar() { document.getElementById('modalNovoPilar').classList.add('hidden'); }
+
+    async function salvarNovoPilar(e) {
+      e.preventDefault();
+      if (!usuarioPodeGerir()) return;
+      const projeto = projetos.find(p => p.id === document.getElementById('modalPilarProjetoId').value);
+      if (!projeto) return;
+      const registro = {
+        projeto_id: projeto.id,
+        nome: document.getElementById('novoPilarNome').value.trim(),
+        valor_orcado: parseFloat(document.getElementById('novoPilarValor').value)
+      };
+      await comBotaoOcupado(e, async () => {
+        const { error } = await clienteSupabase.from('pilares_investimento').insert(registro);
+        if (error) {
+          notificar(error.code === '23505' ? 'Este projeto já tem um pilar com esse nome.' : `Não foi possível criar o pilar: ${mensagemErro(error)}`, 'erro');
+          return;
+        }
+        fecharModalNovoPilar();
+        notificar(`Pilar "${registro.nome}" criado em ${projeto.nome}.`);
+        await recarregarDados();
+      });
+    }
+
+    async function validarESalvarGasto(e) {
+      e.preventDefault();
+      if (!usuarioPodeGerir()) return;
+      const gasto = {
+        data: document.getElementById('gastoData').value,
+        projetoId: document.getElementById('gastoProjeto').value,
+        pilarId: document.getElementById('gastoPilar').value,
+        tipoId: document.getElementById('gastoTipo').value,
+        fornecedor: document.getElementById('gastoFornecedor').value.trim(),
+        formaPgto: document.getElementById('gastoFormaPgto').value,
+        descricao: document.getElementById('gastoDescricao').value.trim(),
+        valor: parseFloat(document.getElementById('gastoValor').value)
+      };
+
+      const { projeto, pilar } = buscarPilar(gasto.projetoId, gasto.pilarId);
+      if (!pilar) return;
+
+      const deficit = arredondar(gasto.valor - saldoDoPilar(pilar));
+      if (deficit <= 0) {
+        await comBotaoOcupado(e, () => gravarGasto(gasto));
+        return;
+      }
+
+      gastoPendenteEstouro = { gasto, deficit };
+      document.getElementById('modalEstouroProjeto').textContent = projeto.nome;
+      document.getElementById('modalEstouroPilar').textContent = pilar.nome;
+      document.getElementById('modalEstouroDeficit').textContent = formatarMoeda(deficit);
+
+      const selOrigem = document.getElementById('modalSelectOrigem');
+      selOrigem.innerHTML = "";
+      projetos.forEach(p => {
+        p.pilares.forEach(pil => {
+          const saldoDoador = saldoDoPilar(pil);
+          if (pil.id === pilar.id || saldoDoador < deficit) return;
+          const opt = document.createElement('option');
+          opt.value = `${p.id}|${pil.id}`;
+          opt.textContent = `${p.nome} / ${pil.nome} (saldo: ${formatarMoeda(saldoDoador)})`;
+          selOrigem.appendChild(opt);
+        });
+      });
+      if (selOrigem.options.length === 0) {
+        selOrigem.innerHTML = '<option value="">Nenhum pilar com saldo suficiente</option>';
+      }
+      document.getElementById('modalEstouro').classList.remove('hidden');
+    }
+
+    // Grava a despesa (e a realocação, se houver) numa única transação no banco
+    async function gravarGasto(gasto, realocacao = null) {
+      const { error } = await clienteSupabase.rpc('registrar_gasto', {
+        p_pilar_id: gasto.pilarId,
+        p_tipo_gasto_id: gasto.tipoId,
+        p_data: gasto.data,
+        p_valor: gasto.valor,
+        p_fornecedor: gasto.fornecedor,
+        p_forma_pagamento: gasto.formaPgto,
+        p_descricao: gasto.descricao,
+        p_pilar_doador_id: realocacao ? realocacao.pilarDoadorId : null,
+        p_valor_realocado: realocacao ? realocacao.valor : null,
+        p_justificativa: realocacao ? realocacao.justificativa : null
+      });
+      if (error) {
+        notificar(`Não foi possível gravar a despesa: ${mensagemErro(error)}`, 'erro');
+        return false;
+      }
+      document.querySelector('#gestor-secao-lancamento form').reset();
+      document.getElementById('infoSaldoPilarGasto').textContent = "";
+      await recarregarDados();
+      navegarGestor('budget');
+      notificar(realocacao ? 'Realocação aprovada e despesa gravada.' : 'Despesa gravada com sucesso!');
+      return true;
+    }
+
+    function fecharModalEstouro() {
+      gastoPendenteEstouro = null;
+      document.getElementById('modalEstouro').classList.add('hidden');
+    }
+
+    function confirmarGastoComEstouro() {
+      if (!gastoPendenteEstouro || !usuarioPodeGerir()) return;
+      const gasto = gastoPendenteEstouro.gasto;
+      fecharModalEstouro();
+      gravarGasto(gasto);
+    }
+
+    function confirmarRealocacaoEGravar() {
+      if (!gastoPendenteEstouro || !usuarioPodeGerir()) return;
+      const [origemProjetoId, origemPilarId] = document.getElementById('modalSelectOrigem').value.split('|');
+      const origem = buscarPilar(origemProjetoId, origemPilarId);
+      if (!origem.pilar) {
+        notificar("Selecione um pilar doador com saldo suficiente.", 'erro');
+        return;
+      }
+
+      const { gasto, deficit } = gastoPendenteEstouro;
+      fecharModalEstouro();
+      gravarGasto(gasto, {
+        pilarDoadorId: origemPilarId,
+        valor: deficit,
+        justificativa: `Cobertura de despesa: ${gasto.fornecedor} - ${gasto.descricao}`
+      });
+    }
+
+  </script>
+  <!-- KPIs dos projetos e módulo de relatórios (gestão e diretoria) -->
+  <script src="kpis.js"></script>
+  <script src="relatorios.js"></script>
+</body>
+</html>
