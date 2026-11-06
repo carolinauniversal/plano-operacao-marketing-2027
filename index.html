@@ -23,6 +23,19 @@
       background: #cbd5e1;
       border-radius: 4px;
     }
+    /* Menu de abas: no celular vira uma faixa com rolagem lateral (não estoura a tela) */
+    .nav-abas {
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .nav-abas::-webkit-scrollbar { display: none; }
+    .nav-abas > button { white-space: nowrap; flex-shrink: 0; }
+    @media (max-width: 640px) {
+      .nav-abas { width: 100%; }
+    }
     /* Relatórios: números alinhados nas tabelas */
     .rel-tabela table td, .rel-tabela table th { font-variant-numeric: tabular-nums; }
     /* Impressão / PDF dos relatórios */
@@ -115,14 +128,14 @@
       <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap justify-between items-center gap-2">
         
         <!-- Menu do Perfil COLABORADOR -->
-        <div id="nav-colaborador" class="hidden flex space-x-2 text-xs font-bold">
+        <div id="nav-colaborador" class="nav-abas hidden flex gap-2 text-xs font-bold">
           <button onclick="navegarColaborador('dashboard')" id="btnColabDash" class="px-3 py-1.5 rounded bg-red-600 text-white">1. Minha Dashboard & Capacidade</button>
           <button onclick="navegarColaborador('kanban')" id="btnColabKanban" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">2. Quadro Kanban</button>
           <button onclick="abrirModalNovaTarefa()" class="px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-white">+ Criar Atividade</button>
         </div>
 
         <!-- Menu do Perfil GESTOR e DIRETORIA (DIRETORIA SÓ ENXERGA, NÃO OPERA) -->
-        <div id="nav-gestor" class="hidden flex space-x-2 text-xs font-bold">
+        <div id="nav-gestor" class="nav-abas hidden flex gap-2 text-xs font-bold">
           <button onclick="navegarGestor('budget')" id="btnGestorBudget" class="px-3 py-1.5 rounded bg-red-600 text-white">Orçamento & Budget</button>
           <button onclick="navegarGestor('lancamento')" id="btnGestorLanc" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Lançar Gasto</button>
           <button onclick="navegarGestor('pilares')" id="btnGestorPil" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Projetos & Pilares</button>
@@ -1363,6 +1376,15 @@
         document.getElementById('btnColabKanban').className = "px-3 py-1.5 rounded bg-red-600 text-white";
         renderizarKanbanGeral();
       }
+      mostrarAbaAtiva('nav-colaborador');
+    }
+
+    // No celular o menu rola para o lado: mantém a aba ativa visível
+    function mostrarAbaAtiva(menuId) {
+      const menu = document.getElementById(menuId);
+      const ativa = menu && menu.querySelector('button.bg-red-600');
+      if (!ativa || menu.scrollWidth <= menu.clientWidth) return;
+      menu.scrollLeft = Math.max(0, ativa.offsetLeft - menu.offsetLeft - (menu.clientWidth - ativa.offsetWidth) / 2);
     }
 
     // INTERFACE DO GESTOR E DIRETORIA
@@ -1414,6 +1436,7 @@
         document.getElementById('btnGestorRelatorios').className = "px-3 py-1.5 rounded bg-red-600 text-white";
         relAbrir(); // relatorios.js
       }
+      mostrarAbaAtiva('nav-gestor');
     }
 
     // OPERAÇÕES DO COLABORADOR
