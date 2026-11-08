@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Universal Soluções Automotivas - Plataforma de Marketing</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="icone-apple-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Universal Mkt">
   
   <!-- Estilos e Bibliotecas -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -110,7 +115,9 @@
           </div>
         </div>
 
-        <div class="flex items-center space-x-4">
+        <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+          <button id="btnInstalarApp" type="button" onclick="instalarApp()" class="hidden px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded text-xs font-bold transition">⬇ Instalar app</button>
+          <button id="btnNotificacoes" type="button" onclick="notifAlternar()" class="hidden px-3 py-1.5 rounded text-xs font-bold transition">🔔 Ativar avisos</button>
           <div class="text-right">
             <span id="labelUsuarioNome" class="text-xs font-bold text-white block leading-tight">Nome</span>
             <span id="labelUsuarioCargo" class="text-[10px] text-neutral-400 block">Cargo</span>
@@ -1175,6 +1182,7 @@
       telaLogin.classList.add('hidden');
       appPrincipal.classList.remove('hidden');
       aplicarRegrasPerfil();
+      notifAoEntrar();
     }
 
     async function executarLogin(e) {
@@ -1239,6 +1247,7 @@
     }
 
     async function executarLogout() {
+      await notifAoSair();
       await clienteSupabase.auth.signOut();
       usuarioLogado = null;
       usuarios = [];
@@ -2669,7 +2678,8 @@
       const acoes = botoesAcaoTarefa(t);
       const transferir = gestor ? `<button type="button" onclick="transferirTarefa('${t.id}')" class="px-2 py-1 rounded text-[11px] font-bold ${ESTILOS_BOTAO.neutro}">⇄ Transferir responsável</button>` : '';
       const excluir = gestor ? `<button type="button" onclick="excluirTarefaGestor('${t.id}')" class="px-2 py-1 rounded text-[11px] font-bold ${ESTILOS_BOTAO.neutro} text-red-700 ml-auto">Excluir atividade</button>` : '';
-      document.getElementById('detalheAcoes').innerHTML = acoes + transferir + excluir;
+      const mudarPrioridade = gestor && t.status !== 'Concluído' ? `<button type="button" onclick="alterarPrioridadeTarefa('${t.id}')" class="px-2 py-1 rounded text-[11px] font-bold ${ESTILOS_BOTAO.neutro}">Alterar prioridade</button>` : '';
+      document.getElementById('detalheAcoes').innerHTML = acoes + transferir + mudarPrioridade + excluir;
       document.getElementById('detalheAcoes').classList.toggle('hidden', !acoes && !excluir);
 
       document.getElementById('formNovaAnotacao').classList.toggle('hidden', !(ehResponsavel(t) || gestor));
@@ -2807,6 +2817,25 @@
       const linhas = lista.slice(0, limite).map(t => `• ${t.titulo} (${rotuloStatus(t.status)})`);
       if (lista.length > limite) linhas.push(`• … e mais ${lista.length - limite}`);
       return linhas.join('\n');
+    }
+
+    async function alterarPrioridadeTarefa(id) {
+      if (!usuarioPodeGerir()) return;
+      const t = tarefas.find(x => x.id === id);
+      if (!t) return;
+      const atual = t.prioridade || 'Média';
+      const r = await abrirDialogo({
+        titulo: 'Alterar prioridade',
+        mensagem: `"${t.titulo}"\nPrioridade atual: ${atual}\nO responsável será avisado da mudança.`,
+        campoSelecao: { rotulo: 'Nova prioridade *', opcoes: [{ valor: '', rotulo: 'Selecione...' }, ...Object.keys(CORES_PRIORIDADE).filter(p => p !== atual).map(p => ({ valor: p, rotulo: p }))], obrigatorio: true },
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Salvar', valor: 'ok', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'ok') return;
+      const { error } = await clienteSupabase.from('tarefas').update({ prioridade: r.selecao }).eq('id', id);
+      if (error) { notificar(`Não foi possível alterar a prioridade: ${mensagemErro(error)}`, 'erro'); return; }
+      notificar('Prioridade alterada.');
+      await recarregarDados();
+      if (tarefaDetalheAbertaId) await abrirDetalheTarefa(tarefaDetalheAbertaId);
     }
 
     async function transferirTarefa(id) {
@@ -3281,5 +3310,6 @@
   <script src="kpis.js"></script>
   <script src="projetos-arquivos.js"></script>
   <script src="relatorios.js"></script>
+  <script src="notificacoes.js"></script>
 </body>
 </html>
