@@ -365,6 +365,7 @@ function relMontar() {
     )}
 
     ${relSecao('atividades', 'Atividades e prazos', 'Andamento, fluxo de entregas, prazos e estimativas.',
+      relCard('a-cronograma', 'Cronograma dos projetos', 'Do início previsto da primeira atividade ao término previsto da última. Considera todas as atividades do projeto, sem os filtros de período e pessoa.', { altura: 240, largura: 'lg:col-span-2' }) +
       relCard('a-status', 'Situação atual por projeto', 'Quantidade de atividades em cada etapa, hoje.', { altura: 260 }) +
       relCard('a-fluxo', 'Atividades criadas × concluídas', 'Entrada e saída de trabalho ao longo do período.') +
       relCard('a-prazo', 'Entregas no prazo × fora do prazo', 'Atividades concluídas em cada mês, pelo cumprimento do prazo.') +
@@ -815,7 +816,56 @@ function relFinanceiro(D) {
 // ---------------------------------------------------------------------------
 // 3. Atividades e prazos
 // ---------------------------------------------------------------------------
+function relCronogramaProjetos(D) {
+  const dt = d => d ? d.toLocaleDateString('pt-BR') : '—';
+  const linhas = D.projetosSel.map(p => {
+    const { inicio, fim } = periodoProjeto(p.id);
+    const ts = tarefas.filter(t => t.projetoId === p.id);
+    const concl = ts.filter(t => t.status === 'Concluído').length;
+    let situacao = '—';
+    if (ts.length && concl === ts.length) situacao = '✓ Concluído';
+    else if (fim && fim < D.hoje) situacao = '▲ Atrasado';
+    else if (inicio && inicio > new Date()) situacao = 'Não iniciado';
+    else if (ts.length) situacao = '● Em andamento';
+    return { p, inicio, fim, n: ts.length, concl, situacao, dias: inicio && fim ? Math.ceil((fim - inicio) / relDia) : null };
+  }).filter(x => x.fim).sort((a, b) => (a.inicio || a.fim) - (b.inicio || b.fim));
+
+  const comBarra = linhas.filter(x => x.inicio);
+  const tempos = comBarra.flatMap(x => [x.inicio.getTime(), x.fim.getTime()]);
+  const min = tempos.length ? Math.min(...tempos) : 0, max = tempos.length ? Math.max(...tempos) : 1;
+  const folga = Math.max((max - min) * 0.04, relDia);
+  const curto = v => new Date(v).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  const opcoes = relOpcoes({ horizontal: true, legenda: false, eixo: curto, min: min - folga, max: max + folga });
+  opcoes.scales.x.beginAtZero = false;
+  opcoes.plugins.tooltip.callbacks.label = ctx => ` ${curto(ctx.raw[0])} a ${curto(ctx.raw[1])}`;
+  const marcaHoje = {
+    id: 'relHoje',
+    afterDatasetsDraw(chart) {
+      const x = chart.scales.x.getPixelForValue(Date.now()), area = chart.chartArea, c = chart.ctx;
+      if (x < area.left || x > area.right) return;
+      c.save();
+      c.strokeStyle = REL_COR.tinta2; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(x, area.top); c.lineTo(x, area.bottom); c.stroke();
+      c.fillStyle = REL_COR.tinta2; c.font = `10px ${REL_FONTE}`; c.textAlign = 'center';
+      c.fillText('Hoje', x, area.top - 3);
+      c.restore();
+    }
+  };
+  opcoes.layout = { ...(opcoes.layout || {}), padding: { ...((opcoes.layout || {}).padding || {}), top: 14 } };
+  relAltura('a-cronograma', relAlturaHorizontal(comBarra.length, 180));
+  relGrafico('a-cronograma', {
+    data: { labels: comBarra.map(x => relCurto(x.p.nome, 30)), datasets: [relBarra('Período previsto', comBarra.map(x => [x.inicio.getTime(), x.fim.getTime()]), REL_COR.serie[0], { borderSkipped: false })] },
+    options: opcoes,
+    plugins: [marcaHoje]
+  }, comBarra.length === 0);
+  relTabela('a-cronograma', [{ rotulo: 'Projeto' }, { rotulo: 'Início previsto' }, { rotulo: 'Fim previsto' }, { rotulo: 'Duração (dias)', direita: true }, { rotulo: 'Atividades', direita: true }, { rotulo: 'Concluídas', direita: true }, { rotulo: 'Situação' }],
+    linhas.map(x => [x.p.nome, dt(x.inicio), dt(x.fim), x.dias == null ? '—' : x.dias, x.n, x.concl, x.situacao]),
+    { vazio: 'Nenhum projeto com atividades.' });
+}
+
 function relAtividades(D) {
+  relCronogramaProjetos(D);
+
   // a-status
   const projsAtiv = D.projetosSel.filter(p => D.tarefasSel.some(t => t.projetoId === p.id));
   relAltura('a-status', relAlturaHorizontal(projsAtiv.length));
