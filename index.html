@@ -66,8 +66,8 @@
 
       <form onsubmit="executarLogin(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">E-mail Corporativo</label>
-          <input type="email" id="loginEmail" placeholder="seu.nome@amortex.com.br" required class="w-full border border-neutral-300 rounded-lg p-2.5 text-xs font-medium focus:ring-2 focus:ring-red-600 outline-none">
+          <label class="block text-xs font-bold uppercase text-neutral-700 mb-1">E-mail</label>
+          <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="username" required class="w-full border border-neutral-300 rounded-lg p-2.5 text-xs font-medium focus:ring-2 focus:ring-red-600 outline-none">
         </div>
 
         <div>
@@ -85,7 +85,7 @@
         <p class="text-xs text-neutral-600 font-medium">
           Primeiro acesso? 
           <button onclick="abrirModalSolicitacao()" class="text-red-600 hover:text-red-700 font-bold underline ml-1">
-            Solicite cadastro
+            Solicite seu acesso
           </button>
         </p>
       </div>
@@ -140,7 +140,7 @@
           <button onclick="navegarGestor('lancamento')" id="btnGestorLanc" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Lançar Gasto</button>
           <button onclick="navegarGestor('pilares')" id="btnGestorPil" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Projetos & Pilares</button>
           <button onclick="navegarGestor('kanban_geral')" id="btnGestorKanban" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Kanban Geral</button>
-          <button onclick="navegarGestor('equipe')" id="btnGestorEquipe" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Gestão de Equipe</button>
+          <button onclick="navegarGestor('equipe')" id="btnGestorEquipe" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Gestão de Equipe<span id="badgeSolicitacoes" class="hidden ml-1.5 px-1.5 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black"></span></button>
           <button onclick="navegarGestor('relatorios')" id="btnGestorRelatorios" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">📊 Relatórios</button>
           <button onclick="abrirModalNovaTarefa()" id="btnGestorCriarTarefa" class="px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-white">+ Atribuir Tarefa</button>
         </div>
@@ -369,6 +369,7 @@
       <div id="container-gestao-diretoria" class="hidden space-y-6">
 
         <!-- Alerta de aferições de KPI pendentes (gestão) — kpis.js -->
+        <div id="gestor-alerta-acessos"></div>
         <div id="gestor-alerta-kpis"></div>
 
         <!-- Atividade da própria gestora em produção (aparece em todas as abas) -->
@@ -591,10 +592,11 @@
 
         <!-- SUB-SEÇÃO: GESTÃO DE EQUIPE (EXCLUSIVO GESTOR) -->
         <section id="gestor-secao-equipe" class="hidden space-y-6">
+          <div id="equipe-solicitacoes"></div>
           <div class="glass-card p-6 rounded-xl border border-neutral-200">
-            <div class="flex justify-between items-center border-b border-neutral-200 pb-3 mb-4">
+            <div class="border-b border-neutral-200 pb-3 mb-4">
               <h2 class="text-lg font-black text-neutral-900">Membros da Equipe & Acessos</h2>
-              <button onclick="abrirModalNovoUsuario()" id="btnCadastrarUsuario" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold">+ Cadastrar Usuário</button>
+              <p class="text-xs text-neutral-500">Novos membros entram pelo link "Solicite seu acesso", na tela de login, e aparecem aqui para aprovação.</p>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs text-neutral-600">
@@ -806,35 +808,16 @@
     </div>
   </div>
 
-  <div id="modalNovoUsuario" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-neutral-300">
-      <h3 class="text-base font-black text-neutral-900 mb-2">Cadastrar Membro da Equipe</h3>
-      <form onsubmit="salvarNovoUsuarioDireto(event)" class="space-y-3">
-        <input type="text" id="usrNome" placeholder="Nome Completo" required class="w-full border rounded p-2 text-xs outline-none">
-        <input type="email" id="usrEmail" placeholder="E-mail Corporativo" required class="w-full border rounded p-2 text-xs outline-none">
-        <input type="text" id="usrCargo" placeholder="Cargo" required class="w-full border rounded p-2 text-xs outline-none">
-        <select id="usrContrato" required class="w-full border rounded p-2 text-xs outline-none">
-          <option value="CLT">CLT</option><option value="PJ">PJ</option><option value="Freelancer">Freelancer</option><option value="Estagiário">Estagiário</option><option value="Menor Aprendiz">Menor Aprendiz</option>
-        </select>
-        <select id="usrRole" required class="w-full border rounded p-2 text-xs outline-none font-bold">
-          <option value="colaborador">Perfil: Colaborador</option>
-          <option value="gestor">Perfil: Gestor</option>
-          <option value="diretoria">Perfil: Visão Geral (Diretoria)</option>
-        </select>
-        <div class="flex justify-end space-x-2 pt-2"><button type="button" onclick="fecharModalNovoUsuario()" class="px-3 py-1.5 border rounded text-xs">Cancelar</button><button type="submit" class="px-4 py-1.5 bg-red-600 text-white rounded text-xs font-bold">Salvar Usuário</button></div>
-      </form>
-    </div>
-  </div>
-
   <div id="modalSolicitarCadastro" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border-t-4 border-red-600">
-      <h3 class="text-lg font-black text-neutral-900 mb-1">Solicitar Cadastro</h3>
-      <p class="text-xs text-neutral-500 mb-4">Cadastre seus dados e aguarde a liberação do acesso pelo gestor.</p>
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border-t-4 border-red-600 max-h-[92vh] overflow-y-auto">
+      <h3 class="text-lg font-black text-neutral-900 mb-1">Solicitar Acesso</h3>
+      <p class="text-xs text-neutral-500 mb-4">Preencha seus dados e crie sua senha. Você poderá entrar assim que a gestão aprovar seu acesso.</p>
       <form onsubmit="enviarSolicitacaoCadastro(event)" class="space-y-3">
-        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Nome Completo *</label><input type="text" id="solNome" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
-        <div><label class="block text-xs font-bold text-neutral-700 mb-1">E-mail Corporativo *</label><input type="email" id="solEmail" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
-        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Senha *</label><input type="password" id="solSenha" minlength="8" autocomplete="new-password" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
-        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Cargo *</label><input type="text" id="solCargo" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Nome Completo *</label><input type="text" id="solNome" maxlength="200" autocomplete="name" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">E-mail *</label><input type="email" id="solEmail" autocomplete="email" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Senha * <span class="font-medium text-neutral-400">(mínimo 8 caracteres)</span></label><input type="password" id="solSenha" minlength="8" autocomplete="new-password" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Confirme a Senha *</label><input type="password" id="solSenhaConfirma" minlength="8" autocomplete="new-password" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
+        <div><label class="block text-xs font-bold text-neutral-700 mb-1">Cargo *</label><input type="text" id="solCargo" maxlength="200" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none"></div>
         <div>
           <label class="block text-xs font-bold text-neutral-700 mb-1">Modelo de Contratação *</label>
           <select id="solContrato" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none font-semibold">
@@ -1239,7 +1222,9 @@
 
       if (perfil.status !== 'ativo') {
         await clienteSupabase.auth.signOut();
-        alert('Seu acesso está aguardando liberação da gerência.');
+        alert(perfil.solicitacao_pendente
+          ? 'Sua solicitação foi recebida e está aguardando a aprovação da gestão.'
+          : 'Seu acesso está bloqueado. Fale com a gestão.');
         telaLogin.classList.remove('hidden');
         appPrincipal.classList.add('hidden');
         return;
@@ -1357,7 +1342,6 @@
         // Habilita as ações de edição
         document.getElementById('btnGestorCriarTarefa').classList.remove('hidden');
         document.getElementById('btnGestorCriarProjeto').classList.remove('hidden');
-        document.getElementById('btnCadastrarUsuario').classList.remove('hidden');
         navegarGestor('budget');
       } else if (usuarioLogado.role === 'diretoria') {
         tagBadge.textContent = "Diretoria (Apenas Visualização)";
@@ -1369,7 +1353,6 @@
         // Oculta os botões de edição para a diretoria, mantendo apenas a leitura das abas
         document.getElementById('btnGestorCriarTarefa').classList.add('hidden');
         document.getElementById('btnGestorCriarProjeto').classList.add('hidden');
-        document.getElementById('btnCadastrarUsuario').classList.add('hidden');
         navegarGestor('budget');
       }
 
@@ -1724,7 +1707,8 @@
       const tb = document.getElementById('tabela-usuarios-equipe');
       tb.innerHTML = "";
       const gestor = usuarioLogado.role === 'gestor';
-      usuarios.forEach(u => {
+      renderizarSolicitacoesAcesso();
+      usuarios.filter(u => !u.solicitacao_pendente).forEach(u => {
         const abertas = tarefas.filter(t => t.colaboradorId === u.id && t.status !== 'Concluído').length;
         const acoes = [
           gestor && abertas > 0
@@ -1980,6 +1964,7 @@
         renderizarPainelAndamento();
         if (usuarioLogado.role === 'gestor') renderizarBannerEmProducao('gestor-em-producao');
         else document.getElementById('gestor-em-producao').innerHTML = '';
+        renderizarSolicitacoesAcesso();
         if (typeof kpiRenderizarAlerta === 'function') kpiRenderizarAlerta();
         // Relatórios abertos: atualiza com os dados novos
         if (!document.getElementById('gestor-secao-relatorios').classList.contains('hidden') && typeof relRenderizar === 'function') relRenderizar();
@@ -2960,44 +2945,84 @@
       await recarregarDados();
     }
 
-    function emailJaCadastrado(email) {
-      return usuarios.some(u => u.email.trim().toLowerCase() === email);
+    // ===== SOLICITAÇÕES DE ACESSO (a gestão só aprova ou recusa) =====
+    function solicitacoesPendentes() {
+      return usuarios.filter(u => u.solicitacao_pendente)
+        .sort((a, b) => String(a.solicitado_em || '').localeCompare(String(b.solicitado_em || '')));
     }
 
-    function abrirModalNovoUsuario() {
-      if (!usuarioPodeGerir()) return;
-      document.querySelector('#modalNovoUsuario form').reset();
-      document.getElementById('modalNovoUsuario').classList.remove('hidden');
-    }
-    function fecharModalNovoUsuario() { document.getElementById('modalNovoUsuario').classList.add('hidden'); }
+    function renderizarSolicitacoesAcesso() {
+      const gestor = usuarioLogado && usuarioLogado.role === 'gestor';
+      const lista = gestor ? solicitacoesPendentes() : [];
+      const n = lista.length;
 
-    async function salvarNovoUsuarioDireto(e) {
-      e.preventDefault();
+      const badge = document.getElementById('badgeSolicitacoes');
+      badge.textContent = n;
+      badge.classList.toggle('hidden', n === 0);
+
+      document.getElementById('gestor-alerta-acessos').innerHTML = n === 0 ? '' : `
+        <div class="glass-card p-4 rounded-xl border-l-4 border-amber-400 flex flex-wrap justify-between items-center gap-3">
+          <p class="text-sm font-black text-neutral-900">👤 ${n === 1 ? '1 solicitação de acesso aguardando' : `${n} solicitações de acesso aguardando`} sua aprovação</p>
+          <button type="button" onclick="navegarGestor('equipe')" class="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-700 text-white rounded text-xs font-bold">Analisar</button>
+        </div>`;
+
+      document.getElementById('equipe-solicitacoes').innerHTML = n === 0 ? '' : `
+        <div class="glass-card p-6 rounded-xl border border-amber-300">
+          <h2 class="text-lg font-black text-neutral-900 border-b border-neutral-200 pb-3 mb-3">Solicitações de Acesso (${n})</h2>
+          <div class="divide-y divide-neutral-200">
+            ${lista.map(u => `
+              <div class="py-3 flex flex-wrap justify-between items-center gap-3 text-xs">
+                <div class="min-w-0">
+                  <p class="font-black text-sm text-neutral-900 break-words">${escaparHtml(u.nome)}</p>
+                  <p class="text-neutral-600 break-all">${escaparHtml(u.email)}</p>
+                  <p class="text-neutral-500">${escaparHtml(u.cargo)} · ${escaparHtml(u.modelo_contratacao)}${u.solicitado_em ? ` · solicitado em ${fmtDataHora(u.solicitado_em)}` : ''}</p>
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" onclick="recusarSolicitacaoAcesso('${u.id}')" class="px-3 py-1.5 border border-red-300 text-red-700 hover:bg-red-50 rounded font-bold">Recusar</button>
+                  <button type="button" onclick="aprovarSolicitacaoAcesso('${u.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold">Aprovar</button>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    async function aprovarSolicitacaoAcesso(id) {
       if (!usuarioPodeGerir()) return;
-      const email = document.getElementById('usrEmail').value.trim().toLowerCase();
-      if (emailJaCadastrado(email)) {
-        alert("Já existe um usuário com este e-mail.");
-        return;
-      }
-      const role = document.getElementById('usrRole').value;
-      const perfilBanco = {
-        nome: document.getElementById('usrNome').value.trim(),
-        email: email,
-        cargo: document.getElementById('usrCargo').value.trim(),
-        modelo_contratacao: document.getElementById('usrContrato').value,
-        role: role === 'gestor' ? 'admin' : role,
-        status: 'ativo'
-      };
-      await comBotaoOcupado(e, async () => {
-        const { error } = await clienteSupabase.from('usuarios').insert(perfilBanco);
-        if (error) {
-          notificar(`Não foi possível cadastrar o perfil: ${mensagemErro(error)}`, 'erro');
-          return;
-        }
-        fecharModalNovoUsuario();
-        notificar(`Perfil de ${perfilBanco.nome} criado. Peça para a pessoa usar "Solicite cadastro" com este e-mail para definir a senha.`);
-        await recarregarDados();
+      const u = usuarios.find(usr => usr.id === id);
+      if (!u) return;
+      const perfis = [
+        { valor: 'colaborador', rotulo: 'Colaborador' },
+        { valor: 'diretoria', rotulo: 'Diretoria (visão geral)' },
+        { valor: 'admin', rotulo: 'Gestor' }
+      ];
+      const atual = u.role === 'gestor' ? 'admin' : u.role;
+      const r = await abrirDialogo({
+        titulo: `Aprovar o acesso de ${u.nome}?`,
+        mensagem: `${u.email} poderá entrar na plataforma com o perfil escolhido.`,
+        campoSelecao: { rotulo: 'Perfil de acesso *', obrigatorio: true, opcoes: [...perfis].sort((a, b) => (b.valor === atual) - (a.valor === atual)) },
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Aprovar acesso', valor: 'ok', estilo: 'verde' }]
       });
+      if (r.valor !== 'ok') return;
+      const { error } = await clienteSupabase.rpc('aprovar_acesso', { p_usuario_id: id, p_role: r.selecao });
+      if (error) { notificar(`Não foi possível aprovar: ${mensagemErro(error)}`, 'erro'); return; }
+      notificar(`Acesso de ${u.nome} aprovado.`);
+      await recarregarDados();
+    }
+
+    async function recusarSolicitacaoAcesso(id) {
+      if (!usuarioPodeGerir()) return;
+      const u = usuarios.find(usr => usr.id === id);
+      if (!u) return;
+      const r = await abrirDialogo({
+        titulo: `Recusar a solicitação de ${u.nome}?`,
+        mensagem: `O cadastro de ${u.email} será removido. A pessoa poderá solicitar acesso novamente.`,
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Recusar', valor: 'ok', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'ok') return;
+      const { error } = await clienteSupabase.rpc('recusar_acesso', { p_usuario_id: id });
+      if (error) { notificar(`Não foi possível recusar: ${mensagemErro(error)}`, 'erro'); return; }
+      notificar(`Solicitação de ${u.nome} recusada.`);
+      await recarregarDados();
     }
 
     function abrirModalSolicitacao() {
@@ -3006,28 +3031,50 @@
     }
     function fecharModalSolicitacao() { document.getElementById('modalSolicitarCadastro').classList.add('hidden'); }
 
-    // A solicitação entra bloqueada e o gestor libera pelo botão "Desbloquear" da Gestão de Equipe
+    function mensagemErroCadastro(error) {
+      const msg = (error && error.message) || '';
+      if (/already registered|already exists|database error/i.test(msg)) return 'Já existe um cadastro com este e-mail. Use "Entrar" ou "Esqueci a senha".';
+      if (/rate limit|too many/i.test(msg)) return 'Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.';
+      if (/email.*invalid|invalid.*email|invalid format/i.test(msg)) return 'Informe um e-mail válido.';
+      if (/password/i.test(msg)) return 'Escolha uma senha mais forte, com pelo menos 8 caracteres.';
+      return msg || 'Tente novamente em instantes.';
+    }
+
+    // Qualquer e-mail pode solicitar: o cadastro entra na fila e só acessa após a aprovação da gestão
     async function enviarSolicitacaoCadastro(e) {
       e.preventDefault();
-      const email = document.getElementById('solEmail').value.trim().toLowerCase();
-      const { error } = await clienteSupabase.auth.signUp({
-        email,
-        password: document.getElementById('solSenha').value,
-        options: {
-          emailRedirectTo: urlDaAplicacao(),
-          data: {
-            nome: document.getElementById('solNome').value.trim(),
-            cargo: document.getElementById('solCargo').value.trim(),
-            modelo_contratacao: document.getElementById('solContrato').value
-          }
-        }
-      });
-      if (error) {
-        alert(`Não foi possível enviar a solicitação: ${error.message}`);
+      const senha = document.getElementById('solSenha').value;
+      if (senha !== document.getElementById('solSenhaConfirma').value) {
+        alert('As senhas não conferem.');
+        document.getElementById('solSenhaConfirma').focus();
         return;
       }
-      fecharModalSolicitacao();
-      alert("Solicitação enviada. Confirme o e-mail e aguarde a liberação do gestor.");
+      const email = document.getElementById('solEmail').value.trim().toLowerCase();
+      await comBotaoOcupado(e, async () => {
+        const { data, error } = await clienteSupabase.auth.signUp({
+          email,
+          password: senha,
+          options: {
+            data: {
+              nome: document.getElementById('solNome').value.trim(),
+              cargo: document.getElementById('solCargo').value.trim(),
+              modelo_contratacao: document.getElementById('solContrato').value
+            }
+          }
+        });
+        if (error) {
+          alert(`Não foi possível enviar a solicitação: ${mensagemErroCadastro(error)}`);
+          return;
+        }
+        // Sem confirmação de e-mail o Supabase já abre uma sessão: encerra até a gestão aprovar
+        if (data && data.session) await clienteSupabase.auth.signOut();
+        if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          alert('Já existe um cadastro com este e-mail. Use "Entrar" ou "Esqueci a senha".');
+          return;
+        }
+        fecharModalSolicitacao();
+        alert('Solicitação enviada! Você poderá entrar com seu e-mail e senha assim que a gestão aprovar seu acesso.');
+      });
     }
 
     function abrirModalNovoProjeto() {
