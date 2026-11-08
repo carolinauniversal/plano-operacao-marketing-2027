@@ -808,6 +808,28 @@
     </div>
   </div>
 
+  <div id="modalResetSenha" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border-t-4 border-red-600">
+      <h3 class="text-base font-black text-neutral-900 mb-1">Redefinir senha</h3>
+      <p id="resetSenhaAlvo" class="text-xs text-neutral-500 mb-4 break-words"></p>
+      <form onsubmit="salvarResetSenha(event)" class="space-y-3" autocomplete="off">
+        <div>
+          <label for="resetSenhaValor" class="block text-xs font-bold text-neutral-700 mb-1">Nova senha * <span class="font-medium text-neutral-400">(mínimo 8 caracteres)</span></label>
+          <input type="text" id="resetSenhaValor" minlength="8" maxlength="72" required autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" class="w-full border border-neutral-300 rounded p-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-red-600">
+          <div class="flex gap-2 mt-2">
+            <button type="button" id="resetSenhaGerar" onclick="gerarSenhaReset()" class="px-3 py-1.5 border border-neutral-300 rounded text-xs font-bold hover:bg-neutral-100">Gerar senha</button>
+            <button type="button" onclick="copiarSenhaReset()" class="px-3 py-1.5 border border-neutral-300 rounded text-xs font-bold hover:bg-neutral-100">Copiar</button>
+          </div>
+        </div>
+        <p id="resetSenhaAviso" class="text-xs text-neutral-500">A troca vale na hora e encerra os logins abertos da pessoa. Depois, informe a nova senha a ela.</p>
+        <div class="flex justify-end gap-2 pt-3 border-t border-neutral-100">
+          <button type="button" id="resetSenhaFechar" onclick="fecharResetSenha()" class="px-3 py-1.5 border rounded text-xs font-bold">Cancelar</button>
+          <button type="submit" id="resetSenhaSalvar" class="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold">Alterar senha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="modalSolicitarCadastro" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border-t-4 border-red-600 max-h-[92vh] overflow-y-auto">
       <h3 class="text-lg font-black text-neutral-900 mb-1">Solicitar Acesso</h3>
@@ -832,10 +854,12 @@
   <div id="modalRedefinirSenha" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl border-t-4 border-red-600">
       <h3 class="text-base font-black text-neutral-900 mb-2">Definir nova senha</h3>
+      <p id="trocaSenhaAviso" class="hidden text-xs text-neutral-600 mb-3">Sua senha foi redefinida pela gestão. Crie uma senha própria para continuar.</p>
       <form onsubmit="salvarNovaSenha(event)" class="space-y-3">
         <input type="password" id="novaSenha" minlength="8" autocomplete="new-password" placeholder="Nova senha (mínimo 8 caracteres)" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none">
         <input type="password" id="confirmarNovaSenha" minlength="8" autocomplete="new-password" placeholder="Confirme a nova senha" required class="w-full border border-neutral-300 rounded p-2.5 text-xs outline-none">
         <button type="submit" class="w-full py-2.5 bg-red-600 text-white rounded text-xs font-black">Salvar nova senha</button>
+        <button type="button" id="trocaSenhaSair" onclick="sairDaTrocaSenha()" class="hidden w-full text-xs text-neutral-500 hover:text-red-600 font-semibold">Sair</button>
       </form>
     </div>
   </div>
@@ -1017,7 +1041,12 @@
       return `${window.location.origin}${window.location.pathname}`;
     }
 
+    // true quando a gestão redefiniu a senha e o usuário precisa criar uma própria
+    let trocaSenhaObrigatoria = false;
+
     function abrirModalRedefinirSenha() {
+      document.getElementById('trocaSenhaAviso').classList.toggle('hidden', !trocaSenhaObrigatoria);
+      document.getElementById('trocaSenhaSair').classList.toggle('hidden', !trocaSenhaObrigatoria);
       document.getElementById('tela-login').classList.add('hidden');
       document.getElementById('modalRedefinirSenha').classList.remove('hidden');
       document.getElementById('novaSenha').focus();
@@ -1230,6 +1259,14 @@
         return;
       }
 
+      // Senha redefinida pela gestão: só entra depois de criar uma senha própria
+      if (perfil.trocar_senha) {
+        trocaSenhaObrigatoria = true;
+        appPrincipal.classList.add('hidden');
+        abrirModalRedefinirSenha();
+        return;
+      }
+
       usuarioLogado = { ...perfil, role: perfil.role === 'admin' ? 'gestor' : perfil.role };
       try {
         await carregarDadosAplicacao();
@@ -1272,7 +1309,7 @@
         alert(`Não foi possível enviar o link: ${error.message}`);
         return;
       }
-      alert('Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha.');
+      alert('Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Se não chegar, peça uma nova senha à gestão.');
     }
 
     async function salvarNovaSenha(e) {
@@ -1283,7 +1320,9 @@
         alert('As senhas não conferem.');
         return;
       }
-      const { error } = await clienteSupabase.auth.updateUser({ password: senha });
+      const { error } = trocaSenhaObrigatoria
+        ? await clienteSupabase.rpc('definir_senha_obrigatoria', { p_nova_senha: senha })
+        : await clienteSupabase.auth.updateUser({ password: senha });
       if (error) {
         alert(`Não foi possível atualizar a senha: ${error.message}`);
         return;
@@ -1292,8 +1331,16 @@
       document.querySelector('#modalRedefinirSenha form').reset();
       history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
       linkDeRecuperacao = false;
+      trocaSenhaObrigatoria = false;
       notificar('Senha atualizada com sucesso.');
       await verificarSessao();
+    }
+
+    async function sairDaTrocaSenha() {
+      trocaSenhaObrigatoria = false;
+      document.getElementById('modalRedefinirSenha').classList.add('hidden');
+      document.querySelector('#modalRedefinirSenha form').reset();
+      await executarLogout();
     }
 
     async function executarLogout() {
@@ -1711,6 +1758,9 @@
       usuarios.filter(u => !u.solicitacao_pendente).forEach(u => {
         const abertas = tarefas.filter(t => t.colaboradorId === u.id && t.status !== 'Concluído').length;
         const acoes = [
+          gestor && u.auth_uid
+            ? `<button onclick="abrirResetSenha('${u.id}')" class="px-2 py-1 border border-neutral-300 rounded text-[11px] font-bold text-neutral-800 hover:bg-neutral-100">🔑 Redefinir senha</button>`
+            : (gestor ? '<span class="text-neutral-400 text-[10px]" title="A pessoa precisa usar Solicite seu acesso para criar o login">Sem login</span>' : ''),
           gestor && abertas > 0
             ? `<button onclick="transferirAtividadesUsuario('${u.id}')" class="px-2 py-1 border border-neutral-300 rounded text-[11px] font-bold text-neutral-800 hover:bg-neutral-100">⇄ Transferir (${abertas})</button>`
             : '',
@@ -1726,7 +1776,7 @@
           <td class="p-3 text-neutral-700 font-medium">${escaparHtml(u.cargo)}</td>
           <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-200">${escaparHtml(u.modelo_contratacao)}</span></td>
           <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${u.role === 'gestor' ? 'bg-red-100 text-red-800' : (u.role === 'diretoria' ? 'bg-emerald-100 text-emerald-800' : 'bg-neutral-200 text-neutral-800')}">${u.role}</span></td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-black ${u.status === 'ativo' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${u.status.toUpperCase()}</span></td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-black ${u.status === 'ativo' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${u.status.toUpperCase()}</span>${u.trocar_senha ? ' <span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 whitespace-nowrap">TROCA DE SENHA PENDENTE</span>' : ''}</td>
           <td class="p-3 text-center font-bold ${abertas && u.status !== 'ativo' ? 'text-red-700' : 'text-neutral-800'}" title="${abertas && u.status !== 'ativo' ? 'Usuário bloqueado com atividades em aberto' : ''}">${abertas || '<span class="text-neutral-300">0</span>'}</td>
           <td class="p-3 text-right whitespace-nowrap">${acoes || '<span class="text-neutral-400 text-[10px]">-</span>'}</td>
         `;
@@ -2943,6 +2993,81 @@
         ? `${u.nome} bloqueado(a). ${data} atividade(s) transferida(s) para ${nomeUsuario(para)}.`
         : `${u.nome} bloqueado(a).${emProducao ? ' Atividades em produção foram pausadas.' : ''}`);
       await recarregarDados();
+    }
+
+    // ===== REDEFINIÇÃO DE SENHA PELA GESTÃO (sem confirmação do usuário, sem e-mail) =====
+    let resetSenhaUsuarioId = null;
+
+    function abrirResetSenha(id) {
+      if (!usuarioPodeGerir()) return;
+      const u = usuarios.find(usr => usr.id === id);
+      if (!u || !u.auth_uid) return;
+      resetSenhaUsuarioId = id;
+      document.getElementById('resetSenhaAlvo').textContent = `${u.nome} · ${u.email}`
+        + (u.senha_redefinida_em ? ` · última redefinição em ${fmtDataHora(u.senha_redefinida_em)}${u.senha_redefinida_por ? ` por ${u.senha_redefinida_por}` : ''}` : '');
+      const campo = document.getElementById('resetSenhaValor');
+      campo.value = '';
+      campo.readOnly = false;
+      document.getElementById('resetSenhaGerar').classList.remove('hidden');
+      document.getElementById('resetSenhaSalvar').classList.remove('hidden');
+      document.getElementById('resetSenhaFechar').textContent = 'Cancelar';
+      const aviso = document.getElementById('resetSenhaAviso');
+      aviso.textContent = id === usuarioLogado.id
+        ? 'Esta é a sua própria senha. A troca vale na hora e sua sessão continua aberta.'
+        : 'A troca vale na hora e encerra os logins abertos da pessoa. Informe esta senha a ela: no próximo login, será obrigatório criar uma senha própria.';
+      aviso.className = 'text-xs text-neutral-500';
+      document.getElementById('modalResetSenha').classList.remove('hidden');
+      campo.focus();
+    }
+
+    function fecharResetSenha() {
+      document.getElementById('resetSenhaValor').value = '';
+      resetSenhaUsuarioId = null;
+      document.getElementById('modalResetSenha').classList.add('hidden');
+    }
+
+    // Sem caracteres parecidos (0/O, 1/l/I), para ditar a senha sem confusão
+    function gerarSenhaReset() {
+      const letras = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const limite = 256 - (256 % letras.length); // evita viés do módulo
+      let senha = '';
+      while (senha.length < 12) {
+        const n = crypto.getRandomValues(new Uint8Array(1))[0];
+        if (n < limite) senha += letras[n % letras.length];
+      }
+      document.getElementById('resetSenhaValor').value = senha;
+    }
+
+    async function copiarSenhaReset() {
+      const campo = document.getElementById('resetSenhaValor');
+      if (!campo.value) { notificar('Digite ou gere uma senha primeiro.', 'erro'); return; }
+      try {
+        await navigator.clipboard.writeText(campo.value);
+        notificar('Senha copiada.');
+      } catch (erro) {
+        campo.select();
+        notificar('Não foi possível copiar automaticamente. A senha está selecionada.', 'erro');
+      }
+    }
+
+    async function salvarResetSenha(e) {
+      e.preventDefault();
+      if (!usuarioPodeGerir() || !resetSenhaUsuarioId) return;
+      const campo = document.getElementById('resetSenhaValor');
+      const u = usuarios.find(usr => usr.id === resetSenhaUsuarioId);
+      await comBotaoOcupado(e, async () => {
+        const { error } = await clienteSupabase.rpc('redefinir_senha_usuario', { p_usuario_id: resetSenhaUsuarioId, p_nova_senha: campo.value });
+        if (error) { notificar(`Não foi possível alterar a senha: ${mensagemErro(error)}`, 'erro'); return; }
+        // Mantém a senha na tela para a gestão copiar e informar à pessoa
+        campo.readOnly = true;
+        document.getElementById('resetSenhaGerar').classList.add('hidden');
+        document.getElementById('resetSenhaSalvar').classList.add('hidden');
+        document.getElementById('resetSenhaFechar').textContent = 'Concluir';
+        const aviso = document.getElementById('resetSenhaAviso');
+        aviso.textContent = `✓ Senha de ${u ? u.nome : 'usuário'} alterada. Copie e informe a nova senha; ela não poderá ser vista depois.`;
+        aviso.className = 'text-xs font-bold text-emerald-700';
+        await recarregarDados();
+      });
     }
 
     // ===== SOLICITAÇÕES DE ACESSO (a gestão só aprova ou recusa) =====
