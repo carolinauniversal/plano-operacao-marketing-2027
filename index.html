@@ -628,15 +628,9 @@
             <select id="novaTarPilar" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
           </div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label for="novaTarResponsavel" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Responsável *</label>
-            <select id="novaTarResponsavel" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
-          </div>
-          <div>
-            <label for="novaTarPrazo" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Previsão de entrega *</label>
-            <input type="date" id="novaTarPrazo" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
-          </div>
+        <div>
+          <label for="novaTarResponsavel" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Responsável *</label>
+          <select id="novaTarResponsavel" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -645,7 +639,7 @@
           </div>
           <div>
             <label for="novaTarTerminoPrev" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Previsão de término *</label>
-            <input type="datetime-local" id="novaTarTerminoPrev" required onchange="sugerirPrazoDoTermino()" class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
+            <input type="datetime-local" id="novaTarTerminoPrev" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1395,6 +1389,23 @@
       return d;
     }
 
+    // Período do projeto: início previsto da primeira atividade até o término previsto da última
+    function periodoProjeto(projetoId) {
+      const doProjeto = tarefas.filter(t => t.projetoId === projetoId);
+      const inicios = doProjeto.filter(t => t.previsaoInicio).map(t => Date.parse(t.previsaoInicio));
+      return {
+        inicio: inicios.length ? new Date(Math.min(...inicios)) : null,
+        fim: doProjeto.length ? new Date(Math.max(...doProjeto.map(t => terminoEsperado(t).getTime()))) : null
+      };
+    }
+
+    function linhaPeriodoProjeto(projetoId) {
+      const { inicio, fim } = periodoProjeto(projetoId);
+      if (!fim) return '';
+      const data = d => d ? d.toLocaleDateString('pt-BR') : '—';
+      return `<p class="text-[11px] text-neutral-500">Início previsto: <strong class="text-neutral-900">${data(inicio)}</strong> · Fim previsto: <strong class="text-neutral-900">${data(fim)}</strong></p>`;
+    }
+
     function textoTerminoEsperado(t) {
       return t.previsaoTermino ? fmtDataHora(t.previsaoTermino) : formatarData(t.prazo);
     }
@@ -1762,8 +1773,7 @@
       if (usuarioLogado.role === 'diretoria') return;
       document.querySelector('#modalNovaTarefa form').reset();
       atualizarPilaresNovaTarefa();
-      const prazo = document.getElementById('novaTarPrazo');
-      prazo.min = dataLocalISO();
+      document.getElementById('novaTarTerminoPrev').min = `${dataLocalISO()}T00:00`;
       const selResp = document.getElementById('novaTarResponsavel');
       const subtitulo = document.getElementById('subtituloModalNovaTarefa');
       if (usuarioLogado.role === 'colaborador') {
@@ -1779,13 +1789,6 @@
       document.getElementById('novaTarTitulo').focus();
     }
     function fecharModalNovaTarefa() { document.getElementById('modalNovaTarefa').classList.add('hidden'); }
-
-    // Preenche a entrega com a data do término, enquanto ela estiver vazia
-    function sugerirPrazoDoTermino() {
-      const prazo = document.getElementById('novaTarPrazo');
-      const termino = document.getElementById('novaTarTerminoPrev').value;
-      if (!prazo.value && termino) prazo.value = termino.slice(0, 10);
-    }
 
     async function salvarNovaTarefa(e) {
       e.preventDefault();
@@ -1805,17 +1808,13 @@
         notificar('A previsão de término precisa ser depois da previsão de início.', 'erro');
         return;
       }
-      if (terminoPrevisto.slice(0, 10) > document.getElementById('novaTarPrazo').value) {
-        notificar('A previsão de término não pode passar da previsão de entrega.', 'erro');
-        return;
-      }
       const registro = {
         titulo: document.getElementById('novaTarTitulo').value.trim(),
         descricao: document.getElementById('novaTarDescricao').value.trim() || null,
         projeto_id: document.getElementById('novaTarProjeto').value,
         pilar_id: document.getElementById('novaTarPilar').value,
         colaborador_id: colaboradorId,
-        prazo_entrega: document.getElementById('novaTarPrazo').value,
+        prazo_entrega: terminoPrevisto.slice(0, 10), // a data do término é o prazo da atividade
         previsao_inicio: new Date(inicioPrevisto).toISOString(),
         previsao_termino: new Date(terminoPrevisto).toISOString(),
         prioridade: document.getElementById('novaTarPrioridade').value,
@@ -2154,6 +2153,7 @@
               <div class="min-w-0">
                 <h3 class="font-black text-sm text-neutral-900">${escaparHtml(p.nome)}</h3>
                 <p class="text-[11px] text-neutral-500">${r.total} atividade(s) · ${r.concluidas} concluída(s) · <strong class="text-neutral-900">${r.pctConcluido}% de avanço</strong></p>
+                ${linhaPeriodoProjeto(p.id)}
               </div>
               <span title="${saude.dica}" class="shrink-0 px-2 py-0.5 rounded text-[10px] font-black uppercase cursor-help ${saude.classe}">${saude.rotulo}</span>
             </div>
@@ -2303,7 +2303,10 @@
         return `
           <div class="border border-neutral-200 rounded-xl p-4 space-y-3">
             <div class="flex flex-wrap justify-between items-center gap-2">
-              <h3 class="font-black text-sm text-neutral-900">${escaparHtml(p.nome)}</h3>
+              <div class="min-w-0">
+                <h3 class="font-black text-sm text-neutral-900">${escaparHtml(p.nome)}</h3>
+                ${linhaPeriodoProjeto(p.id)}
+              </div>
               ${usuarioLogado.role === 'gestor' ? `<button onclick="abrirModalNovoPilar('${p.id}')" class="px-3 py-1.5 border border-neutral-300 rounded text-xs font-bold hover:bg-neutral-100">+ Novo Pilar</button>` : ''}
             </div>
             ${typeof paBlocoProjeto === 'function' ? paBlocoProjeto(p) : ''}
@@ -2638,7 +2641,7 @@
         item('Responsável', escaparHtml(nomeUsuario(t.colaboradorId))),
         item('Status', badgeStatus(t.status)),
         item('Prioridade', escaparHtml(t.prioridade || 'Média')),
-        item('Prazo', `<span class="${atrasada ? 'text-red-700' : ''}">${formatarData(t.prazo)}${atrasada ? ' (atrasada)' : ''}</span>`),
+        ...(t.previsaoTermino ? [] : [item('Prazo', `<span class="${atrasada ? 'text-red-700' : ''}">${formatarData(t.prazo)}${atrasada ? ' (atrasada)' : ''}</span>`)]),
         item('Início previsto', t.previsaoInicio ? fmtDataHora(t.previsaoInicio) : '—'),
         item('Término previsto', t.previsaoTermino ? fmtDataHora(t.previsaoTermino) : '—'),
         usuarioLogado.role === 'colaborador'
