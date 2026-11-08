@@ -129,7 +129,7 @@
         
         <!-- Menu do Perfil COLABORADOR -->
         <div id="nav-colaborador" class="nav-abas hidden flex gap-2 text-xs font-bold">
-          <button onclick="navegarColaborador('dashboard')" id="btnColabDash" class="px-3 py-1.5 rounded bg-red-600 text-white">1. Minha Dashboard & Capacidade</button>
+          <button onclick="navegarColaborador('dashboard')" id="btnColabDash" class="px-3 py-1.5 rounded bg-red-600 text-white">1. Minhas Atividades</button>
           <button onclick="navegarColaborador('kanban')" id="btnColabKanban" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">2. Quadro Kanban</button>
           <button onclick="abrirModalNovaTarefa()" class="px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-white">+ Criar Atividade</button>
         </div>
@@ -166,137 +166,28 @@
           <!-- Atividade em produção agora (cronômetro) -->
           <div id="colab-em-producao"></div>
 
-          <div class="glass-card p-4 rounded-xl border border-neutral-200 flex flex-wrap justify-between items-center gap-3">
+          <div class="flex flex-wrap justify-between items-end gap-2">
             <div>
-              <h2 class="text-base font-black text-neutral-900">Painel de Produtividade & Prazos</h2>
-              <p class="text-xs text-neutral-500">Acompanhamento das suas atividades individuais e capacidade de execução.</p>
+              <h2 class="text-base font-black text-neutral-900">O que fazer</h2>
+              <p class="text-xs text-neutral-500">Inicie, pause e finalize suas atividades. O tempo é registrado automaticamente.</p>
             </div>
-            <div class="flex items-center space-x-2">
-              <label class="text-xs font-bold text-neutral-700">Filtrar por Projeto:</label>
-              <select id="filtroProjetoColab" onchange="renderizarDashboardColaborador()" class="border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
-                <option value="todos">Todos os Projetos</option>
-              </select>
-            </div>
+            <button onclick="navegarColaborador('kanban')" class="text-xs text-red-600 font-bold hover:underline">Ver no Kanban →</button>
           </div>
 
-          <!-- Cards de Prazos & SLAs -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="glass-card p-4 rounded-xl border-l-4 border-red-600 border border-neutral-200">
-              <p class="text-[11px] uppercase font-bold text-neutral-500">Vencendo Hoje</p>
-              <h3 id="colab-kpi-hoje" class="text-2xl font-black text-red-600 mt-1">0</h3>
-              <span class="text-[10px] text-neutral-400">Exige prioridade imediata</span>
-            </div>
-            <div class="glass-card p-4 rounded-xl border-l-4 border-amber-500 border border-neutral-200">
-              <p class="text-[11px] uppercase font-bold text-neutral-500">Vencendo na Semana</p>
-              <h3 id="colab-kpi-semana" class="text-2xl font-black text-amber-600 mt-1">0</h3>
-              <span class="text-[10px] text-neutral-400">Próximos 7 dias</span>
-            </div>
-            <div class="glass-card p-4 rounded-xl border-l-4 border-neutral-600 border border-neutral-200">
-              <p class="text-[11px] uppercase font-bold text-neutral-500">Vencendo no Mês</p>
-              <h3 id="colab-kpi-mes" class="text-2xl font-black text-neutral-900 mt-1">0</h3>
-              <span class="text-[10px] text-neutral-400">Mês corrente</span>
-            </div>
-            <div class="glass-card p-4 rounded-xl border-l-4 border-black border border-neutral-200">
-              <p class="text-[11px] uppercase font-bold text-neutral-500">Total de Demandas</p>
-              <h3 id="colab-kpi-total" class="text-2xl font-black text-neutral-900 mt-1">0</h3>
-              <span class="text-[10px] text-neutral-400">Atribuídas ao seu perfil</span>
-            </div>
+          <!-- Blocos: hoje, semana e mês -->
+          <div id="colab-blocos-prazo" class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start"></div>
+
+          <div>
+            <h2 class="text-base font-black text-neutral-900">Minhas atividades por projeto</h2>
+            <p class="text-xs text-neutral-500">Um bloco por projeto, com as horas que você já consumiu.</p>
           </div>
 
-          <!-- Capacidade Operacional -->
-          <div class="glass-card p-5 rounded-xl border border-neutral-200 space-y-4">
-            <div class="border-b border-neutral-100 pb-2 flex justify-between items-center">
-              <div>
-                <h3 class="font-black text-sm text-neutral-900">Balanço de Carga Horária & Capacidade</h3>
-                <p class="text-xs text-neutral-500">Tempo consumido, planejado e margem de horas disponíveis.</p>
-              </div>
-              <span class="text-[10px] font-bold uppercase bg-neutral-100 px-2 py-1 rounded text-neutral-700">8h/dia | 40h/sem | 160h/mês</span>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-200 space-y-2">
-                <div class="flex justify-between items-center text-xs font-bold">
-                  <span>Capacidade Hoje (8h)</span>
-                  <span id="colab-horas-hoje-status" class="text-emerald-700">Disponível</span>
-                </div>
-                <div class="text-xs space-y-1 text-neutral-600">
-                  <div class="flex justify-between"><span>Tempo Consumido:</span> <strong id="colab-horas-hoje-gasto">0h</strong></div>
-                  <div class="flex justify-between"><span>Tempo Previsto:</span> <strong id="colab-horas-hoje-previsto">0h</strong></div>
-                  <div class="flex justify-between border-t border-neutral-200 pt-1 font-bold"><span>Saldo Disponível:</span> <span id="colab-horas-hoje-saldo">8h</span></div>
-                </div>
-              </div>
-
-              <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-200 space-y-2">
-                <div class="flex justify-between items-center text-xs font-bold">
-                  <span>Capacidade na Semana (40h)</span>
-                  <span id="colab-horas-sem-status" class="text-emerald-700">Disponível</span>
-                </div>
-                <div class="text-xs space-y-1 text-neutral-600">
-                  <div class="flex justify-between"><span>Tempo Consumido:</span> <strong id="colab-horas-sem-gasto">0h</strong></div>
-                  <div class="flex justify-between"><span>Tempo Previsto:</span> <strong id="colab-horas-sem-previsto">0h</strong></div>
-                  <div class="flex justify-between border-t border-neutral-200 pt-1 font-bold"><span>Saldo Disponível:</span> <span id="colab-horas-sem-saldo">40h</span></div>
-                </div>
-              </div>
-
-              <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-200 space-y-2">
-                <div class="flex justify-between items-center text-xs font-bold">
-                  <span>Capacidade no Mês (160h)</span>
-                  <span id="colab-horas-mes-status" class="text-emerald-700">Disponível</span>
-                </div>
-                <div class="text-xs space-y-1 text-neutral-600">
-                  <div class="flex justify-between"><span>Tempo Consumido:</span> <strong id="colab-horas-mes-gasto">0h</strong></div>
-                  <div class="flex justify-between"><span>Tempo Previsto:</span> <strong id="colab-horas-mes-previsto">0h</strong></div>
-                  <div class="flex justify-between border-t border-neutral-200 pt-1 font-bold"><span>Saldo Disponível:</span> <span id="colab-horas-mes-saldo">160h</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Gráficos do Colaborador -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="glass-card p-5 rounded-xl border border-neutral-200">
-              <h3 class="font-bold text-sm text-neutral-900 mb-1">Status das Minhas Atividades</h3>
-              <div class="relative h-64 flex items-center justify-center">
-                <canvas id="graficoMinhasTarefas"></canvas>
-              </div>
-            </div>
-
-            <div class="glass-card p-5 rounded-xl border border-neutral-200">
-              <h3 class="font-bold text-sm text-neutral-900 mb-1">Visão Geral de Andamento dos Projetos</h3>
-              <div class="relative h-64">
-                <canvas id="graficoAndamentoGeralProjetos"></canvas>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tabela de Minhas Tarefas -->
-          <div class="glass-card rounded-xl border border-neutral-200 overflow-hidden">
-            <div class="p-4 border-b border-neutral-200 flex justify-between items-center">
-              <div>
-                <h3 class="font-bold text-sm text-neutral-900">Minha Fila de Atividades</h3>
-                <p class="text-xs text-neutral-500">Inicie, pause e finalize suas atividades — o tempo é registrado automaticamente</p>
-              </div>
-              <button onclick="navegarColaborador('kanban')" class="text-xs text-red-600 font-bold hover:underline">Ver no Kanban →</button>
-            </div>
-            <div class="overflow-x-auto custom-scrollbar">
-              <table class="w-full text-left text-xs text-neutral-600">
-                <thead class="bg-neutral-100 text-neutral-800 uppercase font-black">
-                  <tr>
-                    <th class="p-3">Atividade</th>
-                    <th class="p-3">Projeto / Pilar</th>
-                    <th class="p-3">Prazo (SLA)</th>
-                    <th class="p-3 text-center">Horas (Consumidas / Previstas)</th>
-                    <th class="p-3">Status</th>
-                    <th class="p-3 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="tabela-minhas-tarefas" class="divide-y divide-neutral-200 font-medium"></tbody>
-              </table>
-            </div>
-          </div>
+          <!-- Blocos por projeto -->
+          <div id="colab-blocos-projetos" class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"></div>
         </section>
 
-        <!-- TELA 2: QUADRO KANBAN & APONTAMENTO -->
+
+<!-- TELA 2: QUADRO KANBAN & APONTAMENTO -->
         <section id="colab-tela-kanban" class="hidden space-y-6">
           <div class="glass-card p-4 rounded-xl border border-neutral-200 flex flex-wrap justify-between items-center gap-3">
             <div>
@@ -743,8 +634,18 @@
             <select id="novaTarResponsavel" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600"></select>
           </div>
           <div>
-            <label for="novaTarPrazo" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Prazo *</label>
+            <label for="novaTarPrazo" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Previsão de entrega *</label>
             <input type="date" id="novaTarPrazo" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="novaTarInicioPrev" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Previsão de início *</label>
+            <input type="datetime-local" id="novaTarInicioPrev" required class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
+          </div>
+          <div>
+            <label for="novaTarTerminoPrev" class="block text-xs font-bold uppercase text-neutral-700 mb-1">Previsão de término *</label>
+            <input type="datetime-local" id="novaTarTerminoPrev" required onchange="sugerirPrazoDoTermino()" class="w-full border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -923,8 +824,6 @@
     let tarefas = [];
     let tiposGasto = [];
     let usuarioLogado = null;
-    let chartMinhasTarefas = null;
-    let chartAndamentoGeral = null;
     let chartProjetosGestor = null;
     let chartCategoriasGestor = null;
     let gastoPendenteEstouro = null;
@@ -1184,6 +1083,8 @@
         pilarId: t.pilar_id,
         colaboradorId: t.colaborador_id,
         prazo: t.prazo_entrega,
+        previsaoInicio: t.previsao_inicio || null,
+        previsaoTermino: t.previsao_termino || null,
         criadoEm: t.criado_em || null,
         tempo_estimado: Number(t.tempo_estimado || 0),
         tempoGastoRegistrado: Number(t.tempo_gasto || 0),
@@ -1486,113 +1387,129 @@
       mostrarAbaAtiva('nav-gestor');
     }
 
+    // Término esperado: data e hora previstas ou, nas atividades antigas, o fim do dia do prazo
+    function terminoEsperado(t) {
+      if (t.previsaoTermino) return new Date(t.previsaoTermino);
+      const d = dataDeISO(t.prazo);
+      d.setHours(23, 59, 59, 999);
+      return d;
+    }
+
+    function textoTerminoEsperado(t) {
+      return t.previsaoTermino ? fmtDataHora(t.previsaoTermino) : formatarData(t.prazo);
+    }
+
+    // Horas que EU trabalhei na atividade (pelas sessões, inclusive a que está em andamento)
+    function horasConsumidasPorMim(t) {
+      if (!sessoesDisponiveis) return t.tempo_gasto;
+      return sessoes.filter(s => s.tarefaId === t.id && s.colaboradorId === usuarioLogado.id)
+        .reduce((soma, s) => soma + duracaoSessaoHoras(s), 0);
+    }
+
+    // Em qual bloco a atividade entra: pelo momento em que ela passa a exigir trabalho
+    function blocoDaAtividade(t, fimHoje, fimSemana, fimMes) {
+      const termino = terminoEsperado(t);
+      const inicio = t.previsaoInicio ? new Date(t.previsaoInicio) : null;
+      const referencia = inicio && inicio < termino ? inicio : termino;
+      if (t.status === 'Em Produção' || referencia <= fimHoje) return 'hoje';
+      if (referencia <= fimSemana) return 'semana';
+      if (referencia <= fimMes) return 'mes';
+      return null;
+    }
+
+    function situacaoAtividade(t) {
+      const rotulos = { 'Em Produção': 'Em andamento', 'Em Pausa': 'Iniciada · em pausa' };
+      const rotulo = rotulos[t.status] || (t.status === 'A Fazer' ? (t.iniciadoEm ? 'Iniciada' : 'Não iniciada') : rotuloStatus(t.status));
+      return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-neutral-100 text-neutral-800 whitespace-nowrap"><span class="w-2 h-2 rounded-full" style="background:${corStatus(t.status)}"></span>${escaparHtml(rotulo)}</span>`;
+    }
+
+    function linhaAtividadeColaborador(t, { mostrarProjeto = true } = {}) {
+      const pr = projetos.find(p => p.id === t.projetoId);
+      const pi = pr && pr.pilares ? pr.pilares.find(p => p.id === t.pilarId) : null;
+      const concluida = t.status === 'Concluído';
+      const atrasada = !concluida && terminoEsperado(t) < new Date();
+      const destino = [mostrarProjeto && pr ? pr.nome : '', pi ? pi.nome : ''].filter(Boolean).join(' · ');
+      return `
+        <article class="p-3 rounded-lg border bg-white space-y-1.5 ${atrasada ? 'border-red-400' : 'border-neutral-200'}">
+          <button onclick="abrirDetalheTarefa('${t.id}')" class="block text-left text-xs font-black text-neutral-900 hover:text-red-600 hover:underline break-words">${escaparHtml(t.titulo)}</button>
+          ${destino ? `<p class="text-[11px] font-semibold text-red-700 break-words">${escaparHtml(destino)}</p>` : ''}
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-neutral-600">
+            ${situacaoAtividade(t)}
+            ${atrasada ? '<span class="font-bold text-red-700 whitespace-nowrap">▲ Atrasada</span>' : ''}
+          </div>
+          <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-neutral-600">
+            <span>Término esperado: <strong class="text-neutral-900 whitespace-nowrap">${textoTerminoEsperado(t)}</strong></span>
+            <span>Consumido: <strong class="text-neutral-900 whitespace-nowrap">${fmtHoras(horasConsumidasPorMim(t))}</strong></span>
+          </div>
+          ${concluida ? '' : `<div class="flex flex-wrap gap-1.5 pt-0.5">${botoesAcaoTarefa(t)}</div>`}
+        </article>`;
+    }
+
     // OPERAÇÕES DO COLABORADOR
     function renderizarDashboardColaborador() {
-      const projFiltro = document.getElementById('filtroProjetoColab').value;
-      let minhas = tarefas.filter(t => t.colaboradorId === usuarioLogado.id);
-      if (projFiltro !== 'todos') minhas = minhas.filter(t => t.projetoId === projFiltro);
+      const minhas = tarefas.filter(t => t.colaboradorId === usuarioLogado.id);
+      const porTermino = (a, b) => terminoEsperado(a) - terminoEsperado(b);
 
-      const hoje = dataLocalISO();
-      const dataHoje = new Date();
+      const agora = new Date();
+      const fimHoje = new Date(agora); fimHoje.setHours(23, 59, 59, 999);
+      const fimSemana = new Date(fimHoje); fimSemana.setDate(fimHoje.getDate() + ((7 - fimHoje.getDay()) % 7)); // domingo
+      const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const finalSemana = new Date();
-      finalSemana.setDate(dataHoje.getDate() + (7 - dataHoje.getDay()));
-      const strFinalSemana = dataLocalISO(finalSemana);
+      // Lista do que fazer: aguardando aprovação e concluídas não exigem ação do colaborador
+      const aFazer = minhas.filter(t => t.status !== 'Concluído' && t.status !== 'Aprovação').sort(porTermino);
+      const blocos = [
+        { chave: 'hoje', titulo: 'Atividades de hoje', vazio: 'Nada para hoje.', borda: '#dc2626' },
+        { chave: 'semana', titulo: 'Atividades da semana', vazio: 'Nada mais para esta semana.', borda: '#f59e0b' },
+        { chave: 'mes', titulo: 'Atividades do mês', vazio: 'Nada mais para este mês.', borda: '#525252' }
+      ];
+      document.getElementById('colab-blocos-prazo').innerHTML = blocos.map(b => {
+        const lista = aFazer.filter(t => blocoDaAtividade(t, fimHoje, fimSemana, fimMes) === b.chave);
+        return `
+          <section class="glass-card rounded-xl border border-neutral-200 border-t-4 p-4 space-y-3 min-w-0" style="border-top-color:${b.borda}">
+            <div class="flex justify-between items-center gap-2">
+              <h3 class="font-black text-sm text-neutral-900">${b.titulo}</h3>
+              <span class="px-2 py-0.5 rounded-full bg-neutral-100 text-xs font-black text-neutral-800">${lista.length}</span>
+            </div>
+            <div class="space-y-2">${lista.map(t => linhaAtividadeColaborador(t)).join('') || `<p class="text-xs text-neutral-400">${b.vazio}</p>`}</div>
+          </section>`;
+      }).join('');
 
-      const prefixoMes = `${dataHoje.getFullYear()}-${String(dataHoje.getMonth() + 1).padStart(2, '0')}`;
+      const idsProjetos = [...new Set(minhas.map(t => t.projetoId))];
+      const nomeProjeto = id => (projetos.find(p => p.id === id) || {}).nome || 'Sem projeto';
+      document.getElementById('colab-blocos-projetos').innerHTML = idsProjetos
+        .sort((a, b) => nomeProjeto(a).localeCompare(nomeProjeto(b), 'pt-BR'))
+        .map(id => {
+          const doProjeto = minhas.filter(t => t.projetoId === id);
+          const concluidas = doProjeto.filter(t => t.status === 'Concluído').sort((a, b) => porTermino(b, a));
+          const abertas = doProjeto.filter(t => t.status !== 'Concluído').sort(porTermino);
+          const consumido = doProjeto.reduce((soma, t) => soma + horasConsumidasPorMim(t), 0);
+          const opcoes = { mostrarProjeto: false };
+          return `
+            <section class="glass-card rounded-xl border border-neutral-200 p-4 space-y-3 min-w-0">
+              <div class="flex flex-wrap justify-between items-start gap-2 border-b border-neutral-100 pb-2">
+                <div class="min-w-0">
+                  <h3 class="font-black text-sm text-neutral-900 break-words">${escaparHtml(nomeProjeto(id))}</h3>
+                  <p class="text-[11px] text-neutral-500">${abertas.length} em aberto · ${concluidas.length} concluída(s)</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-[10px] uppercase font-bold text-neutral-500">Horas consumidas</p>
+                  <p class="text-sm font-black text-neutral-900 whitespace-nowrap">${fmtHoras(consumido)}</p>
+                </div>
+              </div>
+              <div class="space-y-2">${abertas.map(t => linhaAtividadeColaborador(t, opcoes)).join('') || '<p class="text-xs text-neutral-400">Nenhuma atividade em aberto.</p>'}</div>
+              ${concluidas.length ? `
+                <details>
+                  <summary class="cursor-pointer text-[11px] font-bold text-neutral-600 hover:text-red-600 select-none">Ver concluídas (${concluidas.length})</summary>
+                  <div class="space-y-2 mt-2">${concluidas.map(t => linhaAtividadeColaborador(t, opcoes)).join('')}</div>
+                </details>` : ''}
+            </section>`;
+        }).join('') || '<div class="glass-card rounded-xl border border-dashed border-neutral-300 p-6 text-center text-xs text-neutral-500 lg:col-span-2">Você ainda não tem atividades em nenhum projeto.</div>';
 
-      let vHoje = 0, vSemana = 0, vMes = 0;
-      let hGastoHoje = 0, hPrevHoje = 0;
-      let hGastoSem = 0, hPrevSem = 0;
-      let hGastoMes = 0, hPrevMes = 0;
-
-      // Previsto: pelas atividades sob minha responsabilidade, conforme o prazo
-      minhas.forEach(t => {
-        const p = t.prazo;
-        const est = Number(t.tempo_estimado || 0);
-        if (p === hoje) { vHoje++; hPrevHoje += est; }
-        if (p >= hoje && p <= strFinalSemana) { vSemana++; hPrevSem += est; }
-        if (p.startsWith(prefixoMes)) { vMes++; hPrevMes += est; }
-      });
-
-      // Consumido: horas que EU trabalhei no período (pelas sessões), inclusive em atividades já transferidas
-      const inicioHoje = new Date(); inicioHoje.setHours(0, 0, 0, 0);
-      const inicioSemana = new Date(inicioHoje); inicioSemana.setDate(inicioHoje.getDate() - ((inicioHoje.getDay() + 6) % 7)); // segunda-feira
-      const inicioMes = new Date(inicioHoje.getFullYear(), inicioHoje.getMonth(), 1);
-      const minhasSessoes = sessoes.filter(s => s.colaboradorId === usuarioLogado.id &&
-        (projFiltro === 'todos' || (tarefas.find(t => t.id === s.tarefaId) || {}).projetoId === projFiltro));
-      minhasSessoes.forEach(s => {
-        hGastoHoje += duracaoSessaoHoras(s, inicioHoje);
-        hGastoSem += duracaoSessaoHoras(s, inicioSemana);
-        hGastoMes += duracaoSessaoHoras(s, inicioMes);
-      });
-
-      document.getElementById('colab-kpi-hoje').textContent = vHoje;
-      document.getElementById('colab-kpi-semana').textContent = vSemana;
-      document.getElementById('colab-kpi-mes').textContent = vMes;
-      document.getElementById('colab-kpi-total').textContent = minhas.length;
-
-      const saldoDia = 8 - hPrevHoje;
-      const saldoSem = 40 - hPrevSem;
-      const saldoMes = 160 - hPrevMes;
-
-      document.getElementById('colab-horas-hoje-gasto').textContent = fmtHoras(hGastoHoje);
-      document.getElementById('colab-horas-hoje-previsto').textContent = fmtHoras(hPrevHoje);
-      document.getElementById('colab-horas-hoje-saldo').textContent = fmtHoras(saldoDia);
-      document.getElementById('colab-horas-hoje-status').textContent = saldoDia >= 0 ? "Disponível" : "Sobrecarga!";
-      document.getElementById('colab-horas-hoje-status').className = saldoDia >= 0 ? "text-emerald-700 font-bold" : "text-red-700 font-black";
-
-      document.getElementById('colab-horas-sem-gasto').textContent = fmtHoras(hGastoSem);
-      document.getElementById('colab-horas-sem-previsto').textContent = fmtHoras(hPrevSem);
-      document.getElementById('colab-horas-sem-saldo').textContent = fmtHoras(saldoSem);
-      document.getElementById('colab-horas-sem-status').textContent = saldoSem >= 0 ? "Disponível" : "Sobrecarga!";
-      document.getElementById('colab-horas-sem-status').className = saldoSem >= 0 ? "text-emerald-700 font-bold" : "text-red-700 font-black";
-
-      document.getElementById('colab-horas-mes-gasto').textContent = fmtHoras(hGastoMes);
-      document.getElementById('colab-horas-mes-previsto').textContent = fmtHoras(hPrevMes);
-      document.getElementById('colab-horas-mes-saldo').textContent = fmtHoras(saldoMes);
-      document.getElementById('colab-horas-mes-status').textContent = saldoMes >= 0 ? "Disponível" : "Sobrecarga!";
-      document.getElementById('colab-horas-mes-status').className = saldoMes >= 0 ? "text-emerald-700 font-bold" : "text-red-700 font-black";
-
-      renderizarTabelaMinhasAtividades(minhas);
       renderizarBannerEmProducao();
-
-      setTimeout(() => {
-        renderizarGraficoMinhasTarefas(minhas);
-        renderizarGraficoAndamentoGeral();
-      }, 50);
     }
 
-    function renderizarTabelaMinhasAtividades(lista) {
-      const tbody = document.getElementById('tabela-minhas-tarefas');
-      tbody.innerHTML = "";
-      if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-neutral-400">Nenhuma tarefa no filtro selecionado.</td></tr>`;
-        return;
-      }
-      // Ordem: em produção, atrasadas/abertas por prazo, concluídas por último
-      const ordem = { 'Em Produção': 0, 'Em Pausa': 1, 'A Fazer': 1, 'Aprovação': 2, 'Concluído': 3 };
-      [...lista].sort((a, b) => (ordem[a.status] ?? 1) - (ordem[b.status] ?? 1) || a.prazo.localeCompare(b.prazo)).forEach(t => {
-        const pr = projetos.find(p => p.id === t.projetoId);
-        const pi = pr && pr.pilares ? pr.pilares.find(p => p.id === t.pilarId) : null;
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-neutral-50 border-b border-neutral-100";
-        tr.innerHTML = `
-          <td class="p-3 font-bold text-neutral-900"><button onclick="abrirDetalheTarefa('${t.id}')" class="text-left hover:text-red-600 hover:underline">${escaparHtml(t.titulo)}</button></td>
-          <td class="p-3">
-            <div class="font-bold text-neutral-800">${pr ? escaparHtml(pr.nome) : ''}</div>
-            <div class="text-[11px] text-red-600 font-semibold">${pi ? escaparHtml(pi.nome) : ''}</div>
-          </td>
-          <td class="p-3 font-medium">${formatarData(t.prazo)}</td>
-          <td class="p-3 text-center font-bold whitespace-nowrap">${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}</td>
-          <td class="p-3">${badgeStatus(t.status)}</td>
-          <td class="p-3"><div class="flex flex-wrap justify-end gap-1.5">${botoesAcaoTarefa(t)}<button onclick="abrirDetalheTarefa('${t.id}')" class="px-2 py-1 border border-neutral-300 rounded text-[11px] font-bold hover:bg-neutral-100">Detalhes</button></div></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
 
-    // Faixa no topo do painel do colaborador com a atividade em produção e o cronômetro
+// Faixa no topo do painel do colaborador com a atividade em produção e o cronômetro
     function renderizarBannerEmProducao(alvoId = 'colab-em-producao') {
       const alvo = document.getElementById(alvoId);
       const atual = tarefas.find(t => t.colaboradorId === usuarioLogado.id && t.status === 'Em Produção');
@@ -1612,7 +1529,7 @@
           <div class="min-w-0">
             <p class="text-[10px] uppercase font-bold text-red-400 tracking-wider">Em produção agora · ${pr ? escaparHtml(pr.nome) : ''}</p>
             <button onclick="abrirDetalheTarefa('${atual.id}')" class="text-sm font-black text-left hover:underline">${escaparHtml(atual.titulo)}</button>
-            <p class="text-[11px] text-neutral-400">Total consumido: ${fmtHoras(atual.tempo_gasto)} de ${fmtHoras(atual.tempo_estimado)} previstas</p>
+            <p class="text-[11px] text-neutral-400">Total consumido: ${fmtHoras(atual.tempo_gasto)}${usuarioLogado.role === 'colaborador' ? '' : ` de ${fmtHoras(atual.tempo_estimado)} previstas`}</p>
           </div>
           <div class="flex items-center gap-4">
             <div class="text-right">
@@ -1622,41 +1539,6 @@
             <div class="flex flex-wrap gap-1.5">${botoesAcaoTarefa(atual, true)}</div>
           </div>
         </div>`;
-    }
-
-    function renderizarGraficoMinhasTarefas(lista) {
-      const counts = {};
-      STATUS_TAREFA.forEach(s => { counts[s.rotulo] = 0; });
-      lista.forEach(t => { const r = rotuloStatus(t.status); counts[r] = (counts[r] || 0) + 1; });
-
-      if (chartMinhasTarefas) chartMinhasTarefas.destroy();
-      const ctx = document.getElementById('graficoMinhasTarefas').getContext('2d');
-      chartMinhasTarefas = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(counts),
-          datasets: [{ data: Object.values(counts), backgroundColor: STATUS_TAREFA.map(s => s.cor) }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
-      });
-    }
-
-    function renderizarGraficoAndamentoGeral() {
-      const labels = projetos.map(p => p.nome.length > 20 ? p.nome.substring(0, 18) + '...' : p.nome);
-      const percentuais = projetos.map(p => {
-        const tarsProj = tarefas.filter(t => t.projetoId === p.id);
-        if (tarsProj.length === 0) return 0;
-        const concluidas = tarsProj.filter(t => t.status === 'Concluído').length;
-        return Number(((concluidas / tarsProj.length) * 100).toFixed(0));
-      });
-
-      if (chartAndamentoGeral) chartAndamentoGeral.destroy();
-      const ctx = document.getElementById('graficoAndamentoGeralProjetos').getContext('2d');
-      chartAndamentoGeral = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: labels, datasets: [{ label: '% Concluído', data: percentuais, backgroundColor: '#52525b', borderRadius: 4 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { max: 100, ticks: { callback: v => v + '%' } } } }
-      });
     }
 
     function renderizarKanbanGeral() {
@@ -1725,7 +1607,7 @@
           </div>
 
           <div class="mt-1 flex justify-between items-center text-[10px] font-bold text-neutral-700">
-            <span>Horas: ${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}</span>
+            <span>Horas: ${usuarioLogado.role === 'colaborador' ? fmtHoras(t.tempo_gasto) : `${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}`}</span>
             ${t.status === 'Em Produção' && t.sessaoIniciadaEm ? `<span class="font-mono text-red-600 tabular-nums" title="Tempo desta sessão" data-cronometro="${t.sessaoIniciadaEm}">${fmtCronometro(t.sessaoIniciadaEm)}</span>` : ''}
           </div>
 
@@ -1866,15 +1748,6 @@
         selTarResp.appendChild(opt);
       });
 
-      const filtroColabPr = document.getElementById('filtroProjetoColab');
-      filtroColabPr.innerHTML = '<option value="todos">Todos os Projetos</option>';
-      projetos.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.nome;
-        filtroColabPr.appendChild(opt);
-      });
-
       const filtroKanbanPr = document.getElementById('filtroProjetoKanban');
       filtroKanbanPr.innerHTML = '<option value="todos">Todos os Projetos</option>';
       projetos.forEach(p => {
@@ -1907,6 +1780,13 @@
     }
     function fecharModalNovaTarefa() { document.getElementById('modalNovaTarefa').classList.add('hidden'); }
 
+    // Preenche a entrega com a data do término, enquanto ela estiver vazia
+    function sugerirPrazoDoTermino() {
+      const prazo = document.getElementById('novaTarPrazo');
+      const termino = document.getElementById('novaTarTerminoPrev').value;
+      if (!prazo.value && termino) prazo.value = termino.slice(0, 10);
+    }
+
     async function salvarNovaTarefa(e) {
       e.preventDefault();
       if (usuarioLogado.role === 'diretoria') {
@@ -1919,6 +1799,16 @@
         notificar('Selecione um responsável válido da equipe.', 'erro');
         return;
       }
+      const inicioPrevisto = document.getElementById('novaTarInicioPrev').value;
+      const terminoPrevisto = document.getElementById('novaTarTerminoPrev').value;
+      if (new Date(terminoPrevisto) <= new Date(inicioPrevisto)) {
+        notificar('A previsão de término precisa ser depois da previsão de início.', 'erro');
+        return;
+      }
+      if (terminoPrevisto.slice(0, 10) > document.getElementById('novaTarPrazo').value) {
+        notificar('A previsão de término não pode passar da previsão de entrega.', 'erro');
+        return;
+      }
       const registro = {
         titulo: document.getElementById('novaTarTitulo').value.trim(),
         descricao: document.getElementById('novaTarDescricao').value.trim() || null,
@@ -1926,6 +1816,8 @@
         pilar_id: document.getElementById('novaTarPilar').value,
         colaborador_id: colaboradorId,
         prazo_entrega: document.getElementById('novaTarPrazo').value,
+        previsao_inicio: new Date(inicioPrevisto).toISOString(),
+        previsao_termino: new Date(terminoPrevisto).toISOString(),
         prioridade: document.getElementById('novaTarPrioridade').value,
         status: 'A Fazer',
         tempo_estimado: parseFloat(document.getElementById('novaTarHorasPrevistas').value),
@@ -2001,10 +1893,8 @@
     function atualizarTodaAplicacao() {
       if (!usuarioLogado) return;
 
-      const filtroColab = document.getElementById('filtroProjetoColab').value;
       const filtroKanban = document.getElementById('filtroProjetoKanban').value;
       popularSelects();
-      document.getElementById('filtroProjetoColab').value = filtroColab;
       document.getElementById('filtroProjetoKanban').value = filtroKanban;
       atualizarPilaresNovaTarefa();
       atualizarSelectPilaresGasto();
@@ -2749,7 +2639,11 @@
         item('Status', badgeStatus(t.status)),
         item('Prioridade', escaparHtml(t.prioridade || 'Média')),
         item('Prazo', `<span class="${atrasada ? 'text-red-700' : ''}">${formatarData(t.prazo)}${atrasada ? ' (atrasada)' : ''}</span>`),
-        item('Horas consumidas / previstas', `<span class="${t.tempo_estimado > 0 && t.tempo_gasto > t.tempo_estimado ? 'text-red-700' : ''}">${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}</span>`),
+        item('Início previsto', t.previsaoInicio ? fmtDataHora(t.previsaoInicio) : '—'),
+        item('Término previsto', t.previsaoTermino ? fmtDataHora(t.previsaoTermino) : '—'),
+        usuarioLogado.role === 'colaborador'
+          ? item('Horas consumidas', fmtHoras(t.tempo_gasto))
+          : item('Horas consumidas / previstas', `<span class="${t.tempo_estimado > 0 && t.tempo_gasto > t.tempo_estimado ? 'text-red-700' : ''}">${fmtHoras(t.tempo_gasto)} / ${fmtHoras(t.tempo_estimado)}</span>`),
         t.status === 'Em Produção' && t.sessaoIniciadaEm
           ? item('Sessão atual', `<span class="font-mono text-red-600 tabular-nums" data-cronometro="${t.sessaoIniciadaEm}">${fmtCronometro(t.sessaoIniciadaEm)}</span>`)
           : item('Iniciada em', fmtDataHora(t.iniciadoEm)),
