@@ -22,6 +22,7 @@ const REL_COR = {
   grade: '#e1e0d9', eixo: '#c3c2b7', mudo: '#898781', tinta: '#0b0b0b', tinta2: '#52514e', superficie: '#ffffff'
 };
 const REL_FONTE = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+const REL_ASSERT_TOL = 20; // % de desvio aceito para considerar a estimativa próxima do executado
 
 const relEstado = {
   montado: false,
@@ -323,7 +324,7 @@ function relMontar() {
         <p class="text-[10px] text-neutral-400 max-w-xs">O filtro de pessoa vale para atividades, horas e qualidade. Os números financeiros consideram período e projeto.</p>
       </div>
       <nav class="flex flex-wrap gap-1.5 pt-2 border-t border-neutral-100 rel-nao-imprimir" aria-label="Seções do relatório">
-        ${[['executivo', 'Visão executiva'], ['kpis', 'KPIs dos projetos'], ['financeiro', 'Financeiro'], ['atividades', 'Atividades e prazos'], ['equipe', 'Equipe e horas'], ['qualidade', 'Qualidade e fluxo']]
+        ${[['executivo', 'Visão executiva'], ['kpis', 'KPIs dos projetos'], ['financeiro', 'Financeiro'], ['atividades', 'Atividades e prazos'], ['assertividade', 'Assertividade'], ['equipe', 'Equipe e horas'], ['qualidade', 'Qualidade e fluxo']]
           .map(([id, r]) => `<button type="button" onclick="document.getElementById('rel-sec-${id}').scrollIntoView({behavior:'smooth'})" class="px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[11px] font-bold text-neutral-700">${r}</button>`).join('')}
       </nav>
     </div>
@@ -373,6 +374,16 @@ function relMontar() {
       relCard('a-estimativa', 'Horas estimadas × trabalhadas por projeto', 'Quanto do tempo previsto já foi consumido em cada projeto.', { altura: 260 }) +
       relCard('a-desvio', 'Desvio de estimativa nas atividades concluídas', 'Horas trabalhadas acima (+) ou abaixo (−) do estimado, em % (maiores desvios do período).', { altura: 320 }) +
       relCard('a-atrasadas', 'Carga e atrasos por responsável', 'Atividades em aberto e quantas estão com prazo vencido, por pessoa.', { altura: 240, largura: 'lg:col-span-2' })
+    )}
+
+    ${relSecao('assertividade', 'Assertividade', `Se o tempo previsto foi próximo do executado (tolerância de ±${REL_ASSERT_TOL}%). Errar para mais ou para menos reduz o indicador.`,
+      `<div id="rel-as-tiles" class="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3"></div>` +
+      relCard('as-pessoa', 'Resultado das estimativas por pessoa', 'Quantas atividades concluídas ficaram próximas do previsto, levaram mais tempo ou menos tempo.', { altura: 240 }) +
+      relCard('as-nota-pessoa', 'Assertividade média por pessoa', '100% significa executado igual ao previsto; o desvio, para mais ou para menos, reduz a nota.', { altura: 240 }) +
+      relCard('as-nota-projeto', 'Assertividade média por projeto', 'Em quais projetos o tempo é melhor previsto.', { altura: 240 }) +
+      relCard('as-evolucao', 'Evolução da assertividade', 'Média das atividades concluídas em cada intervalo.', { altura: 240 }) +
+      relCard('as-cronograma', 'Início e término: previsto × real', 'Atraso médio em relação à data e hora previstas. Valores negativos indicam antecipação.', { altura: 240, largura: 'lg:col-span-2' }) +
+      relCard('as-detalhe', 'Assertividade por atividade', 'Previsto, executado e desvio de cada atividade concluída no período.', { grafico: false, largura: 'lg:col-span-2' })
     )}
 
     ${relSecao('equipe', 'Equipe e horas', 'Horas trabalhadas (pelas sessões), capacidade e desempenho individual.',
@@ -575,7 +586,7 @@ function relRenderizar() {
   const pessoaTxt = relEstado.pessoa === 'todos' ? 'toda a equipe' : relNomePessoa(relEstado.pessoa);
   document.getElementById('rel-resumo-filtro').textContent =
     `Período: ${D.ini.toLocaleDateString('pt-BR')} a ${D.fim.toLocaleDateString('pt-BR')} · ${projTxt} · ${pessoaTxt} · gerado em ${new Date().toLocaleString('pt-BR')}`;
-  const etapas = [relExecutivo, relKpis, relFinanceiro, relAtividades, relEquipe, relQualidade];
+  const etapas = [relExecutivo, relKpis, relFinanceiro, relAtividades, relAssertividade, relEquipe, relQualidade];
   etapas.forEach(f => { try { f(D); } catch (e) { console.error('Relatório:', f.name, e); } });
 }
 
@@ -622,6 +633,7 @@ function relExecutivo(D) {
       D.atrasadas.length ? { cor: REL_COR.critico, icone: '▲', texto: `${D.atrasadas.length} com prazo vencido` } : null),
     tile('Horas trabalhadas', fmtHoras(horas), 'registradas pelas sessões no período'),
     tile('Lead time médio', relFmtDias(relMedia(leads)), 'da criação à conclusão'),
+    tile('Assertividade do tempo', relFmtPct(relMedia(relAssertLinhas(D).map(x => x.nota))), 'previsto × executado nas concluídas'),
     tile('Aprovação na 1ª tentativa', q.carregado ? relFmtPct(q.pctPrimeira) : '…', q.carregado ? `${q.devolucoes} devolução(ões) no período` : 'carregando histórico'),
     ...relTileKpis(D, tile)
   ].join('');
@@ -939,6 +951,119 @@ function relAtividades(D) {
     [...D.atrasadas].sort((a, b) => a.prazo.localeCompare(b.prazo)).map(t => [t.titulo, relNomeProjeto(t.projetoId), relNomePessoa(t.colaboradorId), rotuloStatus(t.status),
       { t: formatarData(t.prazo), v: t.prazo }, Math.round((D.hoje - dataDeISO(t.prazo)) / relDia)]),
     { vazio: 'Nenhuma atividade atrasada.' });
+}
+
+// ---------------------------------------------------------------------------
+// Assertividade: tempo previsto × executado
+// ---------------------------------------------------------------------------
+// Só entram atividades concluídas com tempo previsto e com horas apontadas
+function relAssertLinhas(D) {
+  const horasEntre = (real, previsto) => (real && previsto) ? (real - previsto) / 3600000 : null;
+  return D.concluidasPer.filter(t => t.tempo_estimado > 0 && t.tempo_gasto > 0).map(t => {
+    const desvioH = t.tempo_gasto - t.tempo_estimado;
+    const desvioPct = (desvioH / t.tempo_estimado) * 100;
+    const classe = Math.abs(desvioPct) <= REL_ASSERT_TOL ? 'proximo' : (desvioPct > 0 ? 'mais' : 'menos');
+    const iniPrev = relData(t.previsaoInicio), iniReal = relData(t.iniciadoEm);
+    const fimPrev = relData(t.previsaoTermino), fimReal = relData(t.concluidoEm);
+    return { t, desvioH, desvioPct, classe, nota: Math.max(0, 100 - Math.abs(desvioPct)),
+      iniPrev, iniReal, fimPrev, fimReal, atrasoIni: horasEntre(iniReal, iniPrev), atrasoFim: horasEntre(fimReal, fimPrev) };
+  });
+}
+
+function relAssertividade(D) {
+  const CLASSES = {
+    proximo: { rotulo: '✓ Próximo do previsto', cor: REL_COR.bom },
+    mais: { rotulo: '▲ Levou mais tempo', cor: REL_COR.critico },
+    menos: { rotulo: '▼ Levou menos tempo', cor: REL_COR.alerta }
+  };
+  const L = relAssertLinhas(D);
+  const conta = (lista, c) => lista.filter(x => x.classe === c).length;
+  const sinal = h => `${h > 0 ? '+' : ''}${fmtHoras(h)}`;
+  const nota1 = v => v == null ? null : Math.round(v * 10) / 10;
+  const semApontamento = D.concluidasPer.length - L.length;
+
+  const noPrevisto = L.filter(x => x.atrasoFim != null);
+  const noPrazoPrev = noPrevisto.filter(x => x.atrasoFim <= 0).length;
+  const notaMedia = relMedia(L.map(x => x.nota));
+  const statusNota = notaMedia == null ? null : notaMedia >= 80 ? { cor: REL_COR.bom, icone: '✓', texto: 'Bom' } : notaMedia >= 60 ? { cor: REL_COR.alerta, icone: '●', texto: 'Atenção' } : { cor: REL_COR.critico, icone: '▲', texto: 'Crítico' };
+  const mais = L.filter(x => x.classe === 'mais'), menos = L.filter(x => x.classe === 'menos');
+  const tile = (rotulo, valor, detalhe, status = null) => `
+    <div class="bg-white rounded-xl border border-neutral-200 p-3">
+      <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">${rotulo}</p>
+      <p class="text-xl font-black text-neutral-900 leading-tight mt-1">${valor}</p>
+      <p class="text-[10px] text-neutral-500 mt-0.5">${detalhe}</p>
+      ${status ? `<p class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-neutral-800"><span class="w-2 h-2 rounded-full" style="background:${status.cor}"></span>${status.icone} ${status.texto}</p>` : ''}
+    </div>`;
+  document.getElementById('rel-as-tiles').innerHTML = [
+    tile('Assertividade média', relFmtPct(notaMedia), `${L.length} atividade(s) analisada(s)${semApontamento ? ` · ${semApontamento} sem previsão ou horas` : ''}`, statusNota),
+    tile('Próximas do previsto', relFmtPct(relPct(conta(L, 'proximo'), L.length)), `${conta(L, 'proximo')} dentro de ±${REL_ASSERT_TOL}%`),
+    tile('Levaram mais tempo', relFmtInt(mais.length), mais.length ? `${sinal(relSoma(mais, x => x.desvioH))} além do previsto` : 'nenhuma no período'),
+    tile('Levaram menos tempo', relFmtInt(menos.length), menos.length ? `${sinal(relSoma(menos, x => x.desvioH))} em relação ao previsto` : 'nenhuma no período'),
+    tile('Término até o previsto', relFmtPct(relPct(noPrazoPrev, noPrevisto.length)), noPrevisto.length ? `${noPrazoPrev} de ${noPrevisto.length} com data prevista` : 'sem atividades com data prevista')
+  ].join('');
+
+  // Agrupa por uma chave e calcula os totais do grupo
+  const agrupar = (chave, nome) => [...new Set(L.map(chave))].map(id => {
+    const g = L.filter(x => chave(x) === id);
+    return { id, nome: nome(id), g, n: g.length, nota: relMedia(g.map(x => x.nota)), est: relSoma(g, x => x.t.tempo_estimado), exec: relSoma(g, x => x.t.tempo_gasto) };
+  }).sort((a, b) => b.nota - a.nota);
+  const pessoas = agrupar(x => x.t.colaboradorId, relNomePessoa);
+  const projs = agrupar(x => x.t.projetoId, relNomeProjeto);
+  const colunasGrupo = rotulo => [{ rotulo }, { rotulo: 'Concluídas', direita: true }, { rotulo: 'Próximas', direita: true }, { rotulo: 'Mais tempo', direita: true }, { rotulo: 'Menos tempo', direita: true }, { rotulo: 'Previsto', direita: true }, { rotulo: 'Executado', direita: true }, { rotulo: 'Assertividade', direita: true }];
+  const linhaGrupo = x => [x.nome, x.n, conta(x.g, 'proximo'), conta(x.g, 'mais'), conta(x.g, 'menos'), { t: fmtHoras(x.est), v: x.est }, { t: fmtHoras(x.exec), v: x.exec }, { t: relFmtPct(x.nota), v: x.nota }];
+
+  relAltura('as-pessoa', relAlturaHorizontal(pessoas.length, 200));
+  relGrafico('as-pessoa', {
+    data: { labels: pessoas.map(x => x.nome), datasets: Object.entries(CLASSES).map(([c, cfg]) => relBarraEmpilhada(cfg.rotulo, pessoas.map(x => conta(x.g, c) || null), cfg.cor)) },
+    options: relOpcoes({ horizontal: true, empilhado: true, eixo: v => Number.isInteger(v) ? v : '', valor: v => `${v} atividade(s)` })
+  }, pessoas.length === 0);
+  relTabela('as-pessoa', colunasGrupo('Pessoa'), pessoas.map(linhaGrupo));
+
+  const barrasNota = (id, grupos, colunaRotulo) => {
+    relAltura(id, relAlturaHorizontal(grupos.length, 200));
+    relGrafico(id, {
+      data: { labels: grupos.map(x => relCurto(x.nome, 28)), datasets: [relBarra('Assertividade', grupos.map(x => nota1(x.nota)), REL_COR.serie[0])] },
+      options: relOpcoes({ horizontal: true, legenda: false, max: 100, eixo: v => `${v}%`, valor: relFmtPct, rotulos: { formato: relFmtPct }, paddingFim: 40 })
+    }, grupos.length === 0);
+    relTabela(id, colunasGrupo(colunaRotulo), grupos.map(linhaGrupo));
+  };
+  barrasNota('as-nota-pessoa', pessoas, 'Pessoa');
+  barrasNota('as-nota-projeto', projs, 'Projeto');
+
+  const { baldes, tipo } = relBaldes(D.ini, D.fim);
+  const notasBalde = baldes.map(b => {
+    const g = L.filter(x => x.fimReal && x.fimReal >= b.ini && x.fimReal <= b.fim);
+    return { b, n: g.length, nota: nota1(relMedia(g.map(x => x.nota))) };
+  });
+  relSubtitulo('as-evolucao', `Média das atividades concluídas em cada ${tipo}.`);
+  relGrafico('as-evolucao', {
+    data: { labels: notasBalde.map(x => x.b.rotulo), datasets: [relLinha('Assertividade', notasBalde.map(x => x.nota), REL_COR.serie[0], { pointRadius: 3, spanGaps: true })] },
+    options: relOpcoes({ legenda: false, max: 100, eixo: v => `${v}%`, valor: relFmtPct })
+  }, L.length === 0);
+  relTabela('as-evolucao', [{ rotulo: 'Início do intervalo' }, { rotulo: 'Concluídas', direita: true }, { rotulo: 'Assertividade', direita: true }],
+    notasBalde.map(x => [x.b.rotulo, x.n, { t: relFmtPct(x.nota), v: x.nota }]));
+
+  const comData = pessoas.map(p => ({ ...p,
+    ini: nota1(relMedia(p.g.filter(x => x.atrasoIni != null).map(x => x.atrasoIni))),
+    fim: nota1(relMedia(p.g.filter(x => x.atrasoFim != null).map(x => x.atrasoFim))),
+    nData: p.g.filter(x => x.atrasoFim != null || x.atrasoIni != null).length
+  })).filter(p => p.nData > 0);
+  relAltura('as-cronograma', relAlturaHorizontal(comData.length * 1.6, 200));
+  relGrafico('as-cronograma', {
+    data: { labels: comData.map(x => x.nome), datasets: [relBarra('Início', comData.map(x => x.ini), REL_COR.serie[0]), relBarra('Término', comData.map(x => x.fim), REL_COR.serie[1])] },
+    options: relOpcoes({ horizontal: true, eixo: v => `${v}h`, valor: sinal })
+  }, comData.length === 0);
+  relTabela('as-cronograma', [{ rotulo: 'Pessoa' }, { rotulo: 'Atividades com previsão', direita: true }, { rotulo: 'Atraso médio no início', direita: true }, { rotulo: 'Atraso médio no término', direita: true }],
+    comData.map(x => [x.nome, x.nData, { t: x.ini == null ? '—' : sinal(x.ini), v: x.ini }, { t: x.fim == null ? '—' : sinal(x.fim), v: x.fim }]),
+    { vazio: 'Nenhuma atividade concluída com data prevista no período.' });
+
+  const dt = d => d ? d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+  relTabela('as-detalhe',
+    [{ rotulo: 'Atividade' }, { rotulo: 'Projeto' }, { rotulo: 'Responsável' }, { rotulo: 'Previsto', direita: true }, { rotulo: 'Executado', direita: true }, { rotulo: 'Desvio', direita: true }, { rotulo: 'Desvio %', direita: true }, { rotulo: 'Assertividade', direita: true }, { rotulo: 'Resultado' }, { rotulo: 'Início previsto' }, { rotulo: 'Início real' }, { rotulo: 'Término previsto' }, { rotulo: 'Término real' }],
+    [...L].sort((a, b) => a.nota - b.nota).map(x => [x.t.titulo, relNomeProjeto(x.t.projetoId), relNomePessoa(x.t.colaboradorId),
+      { t: fmtHoras(x.t.tempo_estimado), v: x.t.tempo_estimado }, { t: fmtHoras(x.t.tempo_gasto), v: x.t.tempo_gasto }, { t: sinal(x.desvioH), v: x.desvioH },
+      { t: `${x.desvioPct > 0 ? '+' : ''}${relFmtPct(x.desvioPct)}`, v: x.desvioPct }, { t: relFmtPct(x.nota), v: x.nota }, CLASSES[x.classe].rotulo, dt(x.iniPrev), dt(x.iniReal), dt(x.fimPrev), dt(x.fimReal)]),
+    { vazio: 'Nenhuma atividade concluída com previsão e horas apontadas no período.' });
 }
 
 // ---------------------------------------------------------------------------
