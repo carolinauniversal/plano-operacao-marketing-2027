@@ -373,7 +373,7 @@ function kpiAbrirAfericoes(kpiId = null) {
     document.getElementById('afericaoTitulo').textContent = 'Registrar aferições pendentes';
     document.getElementById('afericaoSub').textContent = pend.length
       ? `${pend.length} aferição(ões) de períodos já encerrados. Preencha o que tiver em mãos e salve tudo de uma vez.`
-      : 'Nenhuma aferição pendente. Para registrar o período atual, use "Registrar" no KPI desejado (aba Projetos & Pilares).';
+      : 'Nenhuma aferição pendente. Para registrar o período atual, use "Registrar" no KPI desejado (aba Definição Orçamentária).';
   }
   const hojeISO = dataLocalISO();
   document.getElementById('afericaoLinhas').innerHTML = kpiLinhasAfericao.length ? kpiLinhasAfericao.map((l, i) => {
