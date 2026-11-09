@@ -212,6 +212,7 @@
                   <option value="todos">Toda a equipe</option>
                 </select>
               </span>
+              <button id="btnTransferirLote" type="button" onclick="abrirTransferenciaLote()" class="hidden px-3 py-1.5 border border-violet-300 bg-violet-50 hover:bg-violet-100 rounded text-xs font-bold text-violet-800">⇄ Transferir em lote</button>
             </div>
           </div>
 
@@ -1523,6 +1524,7 @@
         contagem[s.valor] = 0;
       });
 
+      document.getElementById('btnTransferirLote').classList.toggle('hidden', usuarioLogado.role !== 'gestor');
       const filtroProj = document.getElementById('filtroProjetoKanban').value;
       let lista = tarefas;
 
@@ -3408,5 +3410,6 @@
   <script src="projetos-arquivos.js"></script>
   <script src="relatorios.js"></script>
   <script src="notificacoes.js"></script>
+  <script src="transferencia-lote.js"></script>
 </body>
 </html>
