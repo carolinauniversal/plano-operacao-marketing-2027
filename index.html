@@ -196,27 +196,73 @@
 
 <!-- TELA 2: QUADRO KANBAN & APONTAMENTO -->
         <section id="colab-tela-kanban" class="hidden space-y-6">
-          <div class="glass-card p-4 rounded-xl border border-neutral-200 flex flex-wrap justify-between items-center gap-3">
-            <div>
-              <h2 class="text-base font-black text-neutral-900">Quadro Kanban de Tarefas</h2>
-              <p class="text-xs text-neutral-500">Use Iniciar, Pausar e Concluir (ao concluir, informe se precisa de aprovação). O tempo é registrado automaticamente.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <label for="filtroProjetoKanban" class="text-xs font-bold text-neutral-700">Projeto:</label>
-              <select id="filtroProjetoKanban" onchange="renderizarKanbanGeral()" class="border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
-                <option value="todos">Todos os Projetos</option>
-              </select>
-              <span id="blocoFiltroResponsavelKanban" class="hidden inline-flex items-center gap-2">
-                <label for="filtroResponsavelKanban" class="text-xs font-bold text-neutral-700">Responsável:</label>
-                <select id="filtroResponsavelKanban" onchange="renderizarKanbanGeral()" class="border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
-                  <option value="todos">Toda a equipe</option>
-                </select>
-              </span>
+          <div class="glass-card p-4 rounded-xl border border-neutral-200 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-3">
+              <div class="min-w-0">
+                <h2 class="text-base font-black text-neutral-900">Quadro Kanban de Tarefas</h2>
+                <p class="text-xs text-neutral-500">Use Iniciar, Pausar e Concluir (ao concluir, informe se precisa de aprovação). O tempo é registrado automaticamente.</p>
+              </div>
               <button id="btnTransferirLote" type="button" onclick="abrirTransferenciaLote()" class="hidden px-3 py-1.5 border border-violet-300 bg-violet-50 hover:bg-violet-100 rounded text-xs font-bold text-violet-800">⇄ Transferir em lote</button>
+            </div>
+
+            <div class="flex gap-2">
+              <div class="relative flex-1 min-w-0">
+                <label for="kfBusca" class="sr-only">Buscar atividades</label>
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none" aria-hidden="true">🔍</span>
+                <input id="kfBusca" type="search" oninput="kfDigitou()" placeholder="Buscar qualquer palavra: atividade, projeto, pilar, responsável, data..." class="w-full border border-neutral-300 rounded p-2 pl-8 text-xs outline-none focus:ring-2 focus:ring-red-600">
+              </div>
+              <button id="kfBotaoFiltros" type="button" onclick="kfAlternarPainel()" class="md:hidden shrink-0 px-3 py-1.5 border border-neutral-300 rounded text-xs font-bold text-neutral-800">Filtros</button>
+            </div>
+
+            <div id="kfPainel" class="hidden md:block space-y-3">
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <div>
+                  <label for="filtroProjetoKanban" class="block text-[10px] font-bold uppercase text-neutral-600 mb-1">Projeto</label>
+                  <select id="filtroProjetoKanban" onchange="kfMudou()" class="w-full min-w-0 border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
+                    <option value="todos">Todos os Projetos</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="filtroPilarKanban" class="block text-[10px] font-bold uppercase text-neutral-600 mb-1">Pilar</label>
+                  <select id="filtroPilarKanban" onchange="kfMudou()" class="w-full min-w-0 border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600 disabled:bg-neutral-100">
+                    <option value="todos">Escolha o projeto</option>
+                  </select>
+                </div>
+                <div id="blocoFiltroResponsavelKanban" class="hidden">
+                  <label for="filtroResponsavelKanban" class="block text-[10px] font-bold uppercase text-neutral-600 mb-1">Responsável</label>
+                  <select id="filtroResponsavelKanban" onchange="kfMudou()" class="w-full min-w-0 border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
+                    <option value="todos">Toda a equipe</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="filtroPrioridadeKanban" class="block text-[10px] font-bold uppercase text-neutral-600 mb-1">Prioridade</label>
+                  <select id="filtroPrioridadeKanban" onchange="kfMudou()" class="w-full min-w-0 border border-neutral-300 rounded p-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-red-600">
+                    <option value="todas">Todas</option>
+                  </select>
+                </div>
+              </div>
+              <div class="flex flex-wrap items-end justify-between gap-3">
+                <div id="kfPeriodos" class="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por prazo"></div>
+                <div class="flex items-end gap-2">
+                  <div>
+                    <label for="kfDe" class="block text-[10px] font-bold uppercase text-neutral-600 mb-1">Prazo de</label>
+                    <input id="kfDe" type="date" onchange="kfMudouIntervalo()" class="border border-neutral-300 rounded p-1 text-xs outline-none focus:ring-1 focus:ring-red-600">
+                  </div>
+                  <div>
+                    <label for="kfAte" class="block text-[10px] font-bold uppercase text-neutral-600 mb-1">Até</label>
+                    <input id="kfAte" type="date" onchange="kfMudouIntervalo()" class="border border-neutral-300 rounded p-1 text-xs outline-none focus:ring-1 focus:ring-red-600">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center gap-3 text-xs">
+              <span id="kfResultado" class="font-bold text-neutral-700" aria-live="polite"></span>
+              <button id="kfLimpar" type="button" onclick="kfLimparFiltros()" class="hidden font-bold text-red-700 hover:underline">Limpar filtros</button>
             </div>
           </div>
 
-          <!-- Colunas Kanban -->
+<!-- Colunas Kanban -->
           <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
             <div class="bg-neutral-200/60 p-3 rounded-xl border border-neutral-300 flex flex-col">
               <div class="flex justify-between items-center pb-2 mb-2 border-b border-neutral-300">
@@ -1518,11 +1564,7 @@
     }
 
     function renderizarKanbanGeral() {
-      const contagem = {};
-      STATUS_TAREFA.forEach(s => {
-        document.getElementById(`coluna-k-${s.coluna}`).innerHTML = "";
-        contagem[s.valor] = 0;
-      });
+      STATUS_TAREFA.forEach(s => { document.getElementById(`coluna-k-${s.coluna}`).innerHTML = ""; });
 
       document.getElementById('btnTransferirLote').classList.toggle('hidden', usuarioLogado.role !== 'gestor');
       const filtroProj = document.getElementById('filtroProjetoKanban').value;
@@ -1548,10 +1590,11 @@
       if (filtroProj !== 'todos') {
         lista = lista.filter(t => t.projetoId === filtroProj);
       }
+      lista = kfFiltrarGeral(lista);
 
       const hoje = dataLocalISO();
 
-      lista.forEach(t => {
+      kfVisiveis(lista).forEach(t => {
         const estaAtrasada = t.prazo < hoje && t.status !== 'Concluído';
         const pr = projetos.find(p => p.id === t.projetoId);
         const pi = pr && pr.pilares ? pr.pilares.find(p => p.id === t.pilarId) : null;
@@ -1599,13 +1642,10 @@
         const statusInfo = STATUS_TAREFA.find(s => s.valor === t.status);
         if (statusInfo) {
           document.getElementById(`coluna-k-${statusInfo.coluna}`).appendChild(card);
-          contagem[t.status]++;
         }
       });
 
-      STATUS_TAREFA.forEach(s => {
-        document.getElementById(`kanban-c-${s.coluna}`).textContent = contagem[s.valor];
-      });
+      kfFinalizar(usuarioLogado.role === 'colaborador' ? tarefas.filter(t => t.colaboradorId === usuarioLogado.id).length : tarefas.length);
     }
 
     // OPERAÇÕES DO GESTOR
@@ -3411,5 +3451,6 @@
   <script src="relatorios.js"></script>
   <script src="notificacoes.js"></script>
   <script src="transferencia-lote.js"></script>
+  <script src="kanban-filtros.js"></script>
 </body>
 </html>
