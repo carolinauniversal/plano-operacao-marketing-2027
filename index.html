@@ -145,7 +145,7 @@
         <div id="nav-gestor" class="nav-abas hidden flex gap-2 text-xs font-bold">
           <button onclick="navegarGestor('budget')" id="btnGestorBudget" class="px-3 py-1.5 rounded bg-red-600 text-white">Orçamento & Budget</button>
           <button onclick="navegarGestor('lancamento')" id="btnGestorLanc" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Lançar Gasto</button>
-          <button onclick="navegarGestor('pilares')" id="btnGestorPil" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Projetos & Pilares</button>
+          <button onclick="navegarGestor('pilares')" id="btnGestorPil" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Definição Orçamentária</button>
           <button onclick="navegarGestor('kanban_geral')" id="btnGestorKanban" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Kanban Geral</button>
           <button onclick="navegarGestor('equipe')" id="btnGestorEquipe" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Gestão de Equipe<span id="badgeSolicitacoes" class="hidden ml-1.5 px-1.5 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black"></span></button>
           <button onclick="navegarGestor('relatorios')" id="btnGestorRelatorios" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">📊 Relatórios</button>
@@ -477,14 +477,26 @@
           </div>
         </section>
 
-        <!-- SUB-SEÇÃO: MATRIZ DE PROJETOS & PILARES -->
+        <!-- SUB-SEÇÃO: DEFINIÇÃO ORÇAMENTÁRIA -->
         <section id="gestor-secao-pilares" class="hidden space-y-6">
           <div class="glass-card p-6 rounded-xl border border-neutral-200">
             <div class="flex justify-between items-center border-b border-neutral-200 pb-3 mb-4">
-              <h2 class="text-xl font-black text-neutral-900">Matriz de Projetos & Pilares</h2>
+              <h2 class="text-xl font-black text-neutral-900">Definição Orçamentária</h2>
               <button onclick="abrirModalNovoProjeto()" id="btnGestorCriarProjeto" class="px-4 py-2 bg-black text-white rounded text-xs font-bold">+ Novo Projeto</button>
             </div>
             <div id="lista-projetos-pilares" class="space-y-4"></div>
+          </div>
+          <div class="glass-card p-6 rounded-xl border border-neutral-200">
+            <div class="border-b border-neutral-200 pb-3 mb-4">
+              <h2 class="text-lg font-black text-neutral-900">Tipos de Gasto</h2>
+              <p class="text-xs text-neutral-500">Opções disponíveis ao lançar um gasto.</p>
+            </div>
+            <form id="formNovoTipoGasto" onsubmit="adicionarTipoGasto(event)" class="hidden flex flex-wrap gap-2 mb-4">
+              <label for="novoTipoGastoNome" class="sr-only">Nome do novo tipo de gasto</label>
+              <input id="novoTipoGastoNome" type="text" required maxlength="120" placeholder="Nome do novo tipo de gasto" class="flex-1 min-w-0 basis-48 border border-neutral-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-red-600">
+              <button type="submit" class="px-4 py-2 bg-black text-white rounded text-xs font-bold">+ Adicionar</button>
+            </form>
+            <div id="lista-tipos-gasto" class="flex flex-wrap gap-2"></div>
           </div>
         </section>
 
@@ -791,29 +803,6 @@
 
   <!-- JAVASCRIPT MASTER DE CORREÇÃO -->
   <script>
-    // DADOS PADRÃO E LISTAS INSTITUCIONAIS
-    const PROJETOS_PADRAO = [
-      { id: "10000000-0000-4000-8000-000000000001", nome: "Arquitetura de Marca e Universo de Soluções", pilares: [{ id: "20000000-0000-4000-8000-000000000001", nome: "Construção de Provas e Lâminas Gráficas", orcado: 20000 }, { id: "20000000-0000-4000-8000-000000000002", nome: "Construção e Confecção de Catálogo Híbrido", orcado: 50000 }] },
-      { id: "10000000-0000-4000-8000-000000000002", nome: "Carro 50 anos", pilares: [{ id: "20000000-0000-4000-8000-000000000003", nome: "Restauração e Preparação Veicular", orcado: 45000 }] },
-      { id: "10000000-0000-4000-8000-000000000003", nome: "Lançamentos", pilares: [{ id: "20000000-0000-4000-8000-000000000004", nome: "Campanhas de Introdução de Novos Produtos", orcado: 60000 }] },
-      { id: "10000000-0000-4000-8000-000000000004", nome: "Softwares e Recorrências", pilares: [{ id: "20000000-0000-4000-8000-000000000005", nome: "Plataformas SaaS de Marketing e CRM", orcado: 65000 }] }
-    ];
-
-    const TIPOS_DE_GASTO = [
-      "Ações de Ativação em Distribuidores", "Bancos de Imagens e Vetores", "Bonés", "Brindes",
-      "Buffet e Coffe Breaks", "Cachê - Influenciadores / Criadores", "Campanha - WhatsApp (Callsys)",
-      "Equipamentos - Audiovisual", "Estandes (feiras e Eventos Externos)", "Gráfica (folhetos, lâminas, flyers, banners, etc...)",
-      "Hospedagem", "Locação - Decoração e Cenografia", "Locação - Espaço para Eventos", "Locação - Euipamentos de Audiovisual",
-      "Locação - Mobilia", "Locação - Veículos", "Locuções e Trilhas Sonoras", "Logística e Envio (Fretes de Marketing)",
-      "Materiais de PDV (Expositores)", "Passagem Aérea", "Premiações - Balconistas e Mecânicos",
-      "Premiações - Endormarketing", "Premiações - Vendedores", "Produção de Conteúdo (Terceirizados)",
-      "Produtoras (Vídeo / Áudio)", "Recursos Humanos (Estimado)", "Refeiçoes (externas do time)",
-      "Softwares (SaaS)", "Tráfego Pago - Influenciadores", "Tráfego Pago - MercadoLivre",
-      "Tráfego Pago - Meta Ads", "Tráfego Pago - Shopee", "Tráfego Pago - TikTok Ads",
-      "Tráfego Pago - YouTube Ads", "Uniformes e Camisetas", "Transporte por Aplicativo",
-      "Manutenções Veiculares (Carros de Exposição)"
-    ];
-
     const SUPABASE_URL = "https://jtcxzbwjilqgsavuhjdr.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lg4UNHd-1ANfLOP5vL_RWQ_hOVmCZrQ";
     const clienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
@@ -965,42 +954,8 @@
       return data || [];
     }
 
-    async function garantirDadosBasicos() {
-      if (usuarioLogado.role !== 'gestor') return;
-
-      const [linhasProjetos, linhasTipos] = await Promise.all([
-        consultarTabela('projetos', 'id'),
-        consultarTabela('tipos_gasto', 'id,nome')
-      ]);
-
-      if (linhasProjetos.length === 0) {
-        const novosProjetos = PROJETOS_PADRAO.map(p => ({
-          id: p.id,
-          nome: p.nome,
-          ano_exercicio: new Date().getFullYear()
-        }));
-        const novosPilares = PROJETOS_PADRAO.flatMap(p => p.pilares.map(pilar => ({
-          id: pilar.id,
-          projeto_id: p.id,
-          nome: pilar.nome,
-          valor_orcado: pilar.orcado
-        })));
-        const { error: erroProjetos } = await clienteSupabase.from('projetos').insert(novosProjetos);
-        if (erroProjetos) throw erroProjetos;
-        const { error: erroPilares } = await clienteSupabase.from('pilares_investimento').insert(novosPilares);
-        if (erroPilares) throw erroPilares;
-      }
-
-      const nomesExistentes = new Set(linhasTipos.map(t => t.nome));
-      const tiposNovos = TIPOS_DE_GASTO.filter(nome => !nomesExistentes.has(nome)).map(nome => ({ nome }));
-      if (tiposNovos.length > 0) {
-        const { error } = await clienteSupabase.from('tipos_gasto').insert(tiposNovos);
-        if (error) throw error;
-      }
-    }
-
     async function carregarDadosAplicacao() {
-      await garantirDadosBasicos();
+      
       const podeVerFinanceiro = usuarioLogado.role !== 'colaborador';
       const podeAtribuirTarefas = usuarioLogado.role !== 'diretoria';
       const [linhasUsuarios, linhasProjetos, linhasPilares, linhasGastos, linhasRealocacoes, linhasTarefas, linhasTipos, linhasEquipe, linhasSessoes] = await Promise.all([
@@ -2299,7 +2254,10 @@
             <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
               <div class="flex flex-wrap justify-between items-center gap-2 text-xs">
                 <span class="font-bold text-neutral-900">${escaparHtml(pil.nome)}</span>
-                <span class="font-bold ${saldo < 0 ? 'text-red-700' : 'text-emerald-700'}">Saldo: ${formatarMoeda(saldo)}</span>
+                <span class="flex items-center gap-3">
+                  <span class="font-bold ${saldo < 0 ? 'text-red-700' : 'text-emerald-700'}">Saldo: ${formatarMoeda(saldo)}</span>
+                  ${usuarioLogado.role === 'gestor' ? `<button type="button" onclick="excluirPilar('${p.id}', '${pil.id}')" class="text-[11px] font-bold text-red-700 hover:underline">Excluir</button>` : ''}
+                </span>
               </div>
               <div class="mt-2 h-1.5 bg-neutral-200 rounded overflow-hidden">
                 <div class="h-full ${saldo < 0 ? 'bg-red-600' : 'bg-neutral-700'}" style="width: ${pct}%"></div>
@@ -2316,7 +2274,10 @@
                 <h3 class="font-black text-sm text-neutral-900">${escaparHtml(p.nome)}</h3>
                 ${linhaPeriodoProjeto(p.id)}
               </div>
-              ${usuarioLogado.role === 'gestor' ? `<button onclick="abrirModalNovoPilar('${p.id}')" class="px-3 py-1.5 border border-neutral-300 rounded text-xs font-bold hover:bg-neutral-100">+ Novo Pilar</button>` : ''}
+              ${usuarioLogado.role === 'gestor' ? `<span class="flex flex-wrap gap-2">
+                <button onclick="abrirModalNovoPilar('${p.id}')" class="px-3 py-1.5 border border-neutral-300 rounded text-xs font-bold hover:bg-neutral-100">+ Novo Pilar</button>
+                <button type="button" onclick="excluirProjeto('${p.id}')" class="px-3 py-1.5 border border-red-300 rounded text-xs font-bold text-red-700 hover:bg-red-50">Excluir Projeto</button>
+              </span>` : ''}
             </div>
             ${typeof paBlocoProjeto === 'function' ? paBlocoProjeto(p) : ''}
             ${pilares || '<p class="text-xs text-neutral-400">Nenhum pilar cadastrado.</p>'}
@@ -2324,6 +2285,142 @@
           </div>
         `;
       }).join('');
+      renderizarTiposGasto();
+    }
+
+    function renderizarTiposGasto() {
+      const gestor = usuarioLogado.role === 'gestor';
+      document.getElementById('formNovoTipoGasto').classList.toggle('hidden', !gestor);
+      document.getElementById('lista-tipos-gasto').innerHTML = tiposGasto.map(t => `
+        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-neutral-100 border border-neutral-200 text-[11px] font-semibold text-neutral-800 max-w-full">
+          <span class="min-w-0 break-words">${escaparHtml(t.nome)}</span>
+          ${gestor ? `<button type="button" onclick="excluirTipoGasto('${t.id}')" aria-label="Excluir ${escaparHtml(t.nome)}" title="Excluir" class="text-neutral-500 hover:text-red-700 font-black">✕</button>` : ''}
+        </span>`).join('') || '<p class="text-xs text-neutral-400">Nenhum tipo de gasto cadastrado.</p>';
+    }
+
+    async function adicionarTipoGasto(e) {
+      e.preventDefault();
+      if (!usuarioPodeGerir()) return;
+      const campo = document.getElementById('novoTipoGastoNome');
+      const nome = campo.value.trim().replace(/\s+/g, ' ');
+      if (!nome) return;
+      if (tiposGasto.some(t => t.nome.toLocaleLowerCase('pt-BR') === nome.toLocaleLowerCase('pt-BR'))) {
+        notificar('Já existe um tipo de gasto com esse nome.', 'erro');
+        return;
+      }
+      await comBotaoOcupado(e, async () => {
+        const { error } = await clienteSupabase.from('tipos_gasto').insert({ nome });
+        if (error) {
+          notificar(error.code === '23505' ? 'Já existe um tipo de gasto com esse nome.' : `Não foi possível adicionar: ${mensagemErro(error)}`, 'erro');
+          return;
+        }
+        campo.value = '';
+        notificar(`Tipo de gasto "${nome}" adicionado.`);
+        await recarregarDados();
+      });
+    }
+
+    async function avisarExclusaoBloqueada(titulo, mensagem) {
+      await abrirDialogo({ titulo, mensagem, botoes: [{ rotulo: 'Entendi', valor: null }] });
+    }
+
+    async function excluirTipoGasto(id) {
+      if (!usuarioPodeGerir()) return;
+      const tipo = tiposGasto.find(t => t.id === id);
+      if (!tipo) return;
+      const usos = gastos.filter(g => g.tipo === tipo.nome).length;
+      if (usos > 0) {
+        await avisarExclusaoBloqueada('Não é possível excluir', `"${tipo.nome}" está em ${usos} gasto(s) lançado(s) e precisa continuar disponível para esse histórico.`);
+        return;
+      }
+      const r = await abrirDialogo({
+        titulo: 'Excluir tipo de gasto?',
+        mensagem: `"${tipo.nome}" deixará de aparecer ao lançar gastos. Esta ação não pode ser desfeita.`,
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Excluir', valor: 'excluir', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'excluir') return;
+      const { data, error } = await clienteSupabase.from('tipos_gasto').delete().eq('id', id).select('id');
+      if (error || !data || !data.length) {
+        notificar(error && error.code === '23503' ? 'Este tipo de gasto foi usado em um lançamento e não pode ser excluído.' : `Não foi possível excluir: ${error ? mensagemErro(error) : 'sem permissão.'}`, 'erro');
+        return;
+      }
+      notificar('Tipo de gasto excluído.');
+      await recarregarDados();
+    }
+
+    function textoVinculos(nGastos, nAtividades, nRealocacoes) {
+      return [
+        nGastos ? `${nGastos} gasto(s) lançado(s)` : '',
+        nAtividades ? `${nAtividades} atividade(s)` : '',
+        nRealocacoes ? `${nRealocacoes} realocação(ões) de verba` : ''
+      ].filter(Boolean).join(', ');
+    }
+
+    async function excluirPilar(projetoId, pilarId) {
+      if (!usuarioPodeGerir()) return;
+      const projeto = projetos.find(p => p.id === projetoId);
+      const pilar = projeto && projeto.pilares.find(p => p.id === pilarId);
+      if (!pilar) return;
+      const vinculos = textoVinculos(
+        gastos.filter(g => g.pilarId === pilarId).length,
+        tarefas.filter(t => t.pilarId === pilarId).length,
+        realocacoes.filter(x => x.origemPilarId === pilarId || x.destinoPilarId === pilarId).length
+      );
+      if (vinculos) {
+        await avisarExclusaoBloqueada('Não é possível excluir', `O pilar "${pilar.nome}" tem ${vinculos}. Pilares com esse histórico não podem ser excluídos.`);
+        return;
+      }
+      const r = await abrirDialogo({
+        titulo: 'Excluir pilar?',
+        mensagem: `"${pilar.nome}" será excluído do projeto "${projeto.nome}", junto com o orçamento de ${formatarMoeda(pilar.orcado)}. Esta ação não pode ser desfeita.`,
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Excluir', valor: 'excluir', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'excluir') return;
+      const { data, error } = await clienteSupabase.from('pilares_investimento').delete().eq('id', pilarId).select('id');
+      if (error || !data || !data.length) {
+        notificar(error && error.code === '23503' ? 'Este pilar recebeu lançamentos ou atividades e não pode ser excluído.' : `Não foi possível excluir: ${error ? mensagemErro(error) : 'sem permissão.'}`, 'erro');
+        return;
+      }
+      notificar('Pilar excluído.');
+      await recarregarDados();
+    }
+
+    async function excluirProjeto(projetoId) {
+      if (!usuarioPodeGerir()) return;
+      const projeto = projetos.find(p => p.id === projetoId);
+      if (!projeto) return;
+      const vinculos = textoVinculos(
+        gastos.filter(g => g.projetoId === projetoId).length,
+        tarefas.filter(t => t.projetoId === projetoId).length,
+        realocacoes.filter(x => x.origemProjetoId === projetoId || x.destinoProjetoId === projetoId).length
+      );
+      if (vinculos) {
+        await avisarExclusaoBloqueada('Não é possível excluir', `O projeto "${projeto.nome}" tem ${vinculos}. Projetos com esse histórico não podem ser excluídos.`);
+        return;
+      }
+      const total = projeto.pilares.reduce((s, p) => s + Number(p.orcado || 0), 0);
+      const r = await abrirDialogo({
+        titulo: 'Excluir projeto?',
+        mensagem: `"${projeto.nome}" será excluído com ${projeto.pilares.length} pilar(es), orçamento de ${formatarMoeda(total)}, KPIs e aferições${projeto.arquivo ? ' e o PDF anexado' : ''}. Esta ação não pode ser desfeita.`,
+        botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: 'Excluir projeto', valor: 'excluir', estilo: 'vermelho' }]
+      });
+      if (r.valor !== 'excluir') return;
+      const bloqueado = 'Este projeto recebeu lançamentos ou atividades e não pode ser excluído.';
+      const { error: erroPilares } = await clienteSupabase.from('pilares_investimento').delete().eq('projeto_id', projetoId);
+      if (erroPilares) {
+        notificar(erroPilares.code === '23503' ? bloqueado : `Não foi possível excluir: ${mensagemErro(erroPilares)}`, 'erro');
+        await recarregarDados();
+        return;
+      }
+      const { data, error } = await clienteSupabase.from('projetos').delete().eq('id', projetoId).select('id');
+      if (error || !data || !data.length) {
+        notificar(error && error.code === '23503' ? bloqueado : `Não foi possível excluir: ${error ? mensagemErro(error) : 'sem permissão.'}`, 'erro');
+        await recarregarDados();
+        return;
+      }
+      if (projeto.arquivo) await clienteSupabase.storage.from(PA_BUCKET).remove([projeto.arquivo.path]);
+      notificar('Projeto excluído.');
+      await recarregarDados();
     }
 
     function atualizarPilaresNovaTarefa() {
