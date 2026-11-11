@@ -1185,6 +1185,7 @@
       appPrincipal.classList.remove('hidden');
       aplicarRegrasPerfil();
       notifAoEntrar();
+      rtIniciar();
     }
 
     async function executarLogin(e) {
@@ -1249,6 +1250,7 @@
     }
 
     async function executarLogout() {
+      rtParar();
       await notifAoSair();
       await clienteSupabase.auth.signOut();
       usuarioLogado = null;
@@ -3452,5 +3454,6 @@
   <script src="notificacoes.js"></script>
   <script src="transferencia-lote.js"></script>
   <script src="kanban-filtros.js"></script>
+  <script src="tempo-real.js"></script>
 </body>
 </html>
