@@ -87,8 +87,9 @@ function kfTextoDaTarefa(t, hoje) {
   const projeto = projetos.find(p => p.id === t.projetoId);
   const pilar = projeto && projeto.pilares ? projeto.pilares.find(p => p.id === t.pilarId) : null;
   const resp = usuarios.find(u => u.id === t.colaboradorId);
+  const job = t.tarefaPaiId ? tarefas.find(x => x.id === t.tarefaPaiId) : null;
   return kfNormalizar([
-    t.titulo, t.descricao, projeto && projeto.nome, pilar && pilar.nome, resp && resp.nome, t.prioridade, rotuloStatus(t.status),
+    t.titulo, t.descricao, job && job.titulo, t.tarefaPaiId ? 'subatividade' : '', projeto && projeto.nome, pilar && pilar.nome, resp && resp.nome, t.prioridade, rotuloStatus(t.status),
     formatarData(t.prazo), kfDataBr(t.previsaoInicio), kfDataBr(t.previsaoTermino),
     t.prazo < hoje && t.status !== 'Concluído' ? 'atrasada' : ''
   ].join(' '));
