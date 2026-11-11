@@ -324,7 +324,7 @@ function relMontar() {
         <p class="text-[10px] text-neutral-400 max-w-xs">O filtro de pessoa vale para atividades, horas e qualidade. Os números financeiros consideram período e projeto.</p>
       </div>
       <nav class="flex flex-wrap gap-1.5 pt-2 border-t border-neutral-100 rel-nao-imprimir" aria-label="Seções do relatório">
-        ${[['executivo', 'Visão executiva'], ['kpis', 'KPIs dos projetos'], ['financeiro', 'Financeiro'], ['atividades', 'Atividades e prazos'], ['assertividade', 'Assertividade'], ['equipe', 'Equipe e horas'], ['qualidade', 'Qualidade e fluxo']]
+        ${[['executivo', 'Visão executiva'], ['kpis', 'KPIs dos projetos'], ['financeiro', 'Financeiro'], ['atividades', 'Atividades e prazos'], ['jobs', 'Jobs e subatividades'], ['assertividade', 'Assertividade'], ['equipe', 'Equipe e horas'], ['qualidade', 'Qualidade e fluxo']]
           .map(([id, r]) => `<button type="button" onclick="document.getElementById('rel-sec-${id}').scrollIntoView({behavior:'smooth'})" class="px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[11px] font-bold text-neutral-700">${r}</button>`).join('')}
       </nav>
     </div>
@@ -377,6 +377,12 @@ function relMontar() {
       relCard('a-atrasadas', 'Carga e atrasos por responsável', 'Atividades em aberto e quantas estão com prazo vencido, por pessoa.', { altura: 240, largura: 'lg:col-span-2' })
     )}
 
+    ${relSecao('jobs', 'Jobs e subatividades', 'Atividades divididas entre pessoas: o total previsto do job e quanto cada um consumiu.',
+      `<div id="rel-j-tiles" class="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3"></div>` +
+      relCard('j-horas', 'Horas por pessoa em cada job', 'Horas trabalhadas por quem executou cada parte (os 15 jobs com mais horas). Jobs em aberto ou concluídos no período.', { altura: 260, largura: 'lg:col-span-2' }) +
+      relCard('j-subs', 'Subatividades dos jobs', 'Cada parte, com responsável, situação, término previsto e horas.', { grafico: false, largura: 'lg:col-span-2' })
+    )}
+
     ${relSecao('assertividade', 'Assertividade', `Se o tempo previsto foi próximo do executado (tolerância de ±${REL_ASSERT_TOL}%). Errar para mais ou para menos reduz o indicador.`,
       `<div id="rel-as-tiles" class="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3"></div>` +
       relCard('as-pessoa', 'Resultado das estimativas por pessoa', 'Quantas atividades concluídas ficaram próximas do previsto, levaram mais tempo ou menos tempo.', { altura: 240 }) +
@@ -405,7 +411,7 @@ function relMontar() {
       relCard('q-devolucoes', 'Motivos de devolução', 'O que a gestão pediu para ajustar.', { grafico: false }) +
       relCard('q-transferencias', 'Transferências de responsável', 'Histórico de transferências com o motivo informado.', { grafico: false, largura: 'lg:col-span-2' })
     )}
-    <p class="text-[10px] text-neutral-400 pb-4">Horas trabalhadas vêm das sessões (iniciar → pausar/concluir) e contam para quem executou, inclusive antes de transferências. Situações "atuais" (status, atrasos, aging) refletem o dia de hoje; os demais números respeitam o período escolhido.</p>
+    <p class="text-[10px] text-neutral-400 pb-4">Horas trabalhadas vêm das sessões (iniciar → pausar/concluir) e contam para quem executou, inclusive antes de transferências. Em jobs com subatividades, as estimativas comparam o previsto da atividade principal com as horas de todas as partes. Situações "atuais" (status, atrasos, aging) refletem o dia de hoje; os demais números respeitam o período escolhido.</p>
   `;
   relEstado.montado = true;
 }
@@ -587,7 +593,7 @@ function relRenderizar() {
   const pessoaTxt = relEstado.pessoa === 'todos' ? 'toda a equipe' : relNomePessoa(relEstado.pessoa);
   document.getElementById('rel-resumo-filtro').textContent =
     `Período: ${D.ini.toLocaleDateString('pt-BR')} a ${D.fim.toLocaleDateString('pt-BR')} · ${projTxt} · ${pessoaTxt} · gerado em ${new Date().toLocaleString('pt-BR')}`;
-  const etapas = [relExecutivo, relKpis, relFinanceiro, relAtividades, relAssertividade, relEquipe, relQualidade];
+  const etapas = [relExecutivo, relKpis, relFinanceiro, relAtividades, relJobs, relAssertividade, relEquipe, relQualidade];
   etapas.forEach(f => { try { f(D); } catch (e) { console.error('Relatório:', f.name, e); } });
 }
 
@@ -964,7 +970,8 @@ function relAtividades(D) {
     est.map(x => [x.p.nome, x.n, { t: fmtHoras(x.est), v: x.est }, { t: fmtHoras(x.gasto), v: x.gasto }, { t: fmtHoras(x.est - x.gasto), v: x.est - x.gasto, cls: x.gasto > x.est ? 'text-red-700 font-bold' : '' }, relFmtPct(relPct(x.gasto, x.est))]));
 
   // a-desvio: divergente por atividade concluída
-  const desv = D.concluidasPer.filter(t => t.tempo_estimado > 0).map(t => ({ t, pct: ((t.tempo_gasto - t.tempo_estimado) / t.tempo_estimado) * 100 }))
+  // Em job com subatividades, compara o previsto da principal com as horas do job inteiro
+  const desv = D.concluidasPer.filter(t => t.tempo_estimado > 0).map(t => ({ t, h: horasParaEstimativa(t), pct: ((horasParaEstimativa(t) - t.tempo_estimado) / t.tempo_estimado) * 100 }))
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
   const desvTop = desv.slice(0, 15).sort((a, b) => b.pct - a.pct);
   relAltura('a-desvio', relAlturaHorizontal(desvTop.length));
@@ -983,7 +990,7 @@ function relAtividades(D) {
     ? `Horas trabalhadas acima (+) ou abaixo (−) do estimado. Desvio médio das ${desv.length} concluídas no período: ${desvMedio > 0 ? '+' : ''}${relFmtPct(desvMedio)}.`
     : 'Horas trabalhadas acima (+) ou abaixo (−) do estimado, nas atividades concluídas do período.');
   relTabela('a-desvio', [{ rotulo: 'Atividade' }, { rotulo: 'Projeto' }, { rotulo: 'Responsável' }, { rotulo: 'Estimado', direita: true }, { rotulo: 'Trabalhado', direita: true }, { rotulo: 'Desvio', direita: true }],
-    desv.map(x => [x.t.titulo, relNomeProjeto(x.t.projetoId), relNomePessoa(x.t.colaboradorId), { t: fmtHoras(x.t.tempo_estimado), v: x.t.tempo_estimado }, { t: fmtHoras(x.t.tempo_gasto), v: x.t.tempo_gasto },
+    desv.map(x => [x.t.titulo + (temSubatividades(x.t) ? ' (job)' : ''), relNomeProjeto(x.t.projetoId), relNomePessoa(x.t.colaboradorId), { t: fmtHoras(x.t.tempo_estimado), v: x.t.tempo_estimado }, { t: fmtHoras(x.h), v: x.h },
       { t: `${x.pct > 0 ? '+' : ''}${relFmtPct(x.pct)}`, v: x.pct, cls: x.pct > 0 ? 'text-red-700 font-bold' : 'text-blue-700' }]));
 
   // a-atrasadas por responsável
@@ -1004,18 +1011,84 @@ function relAtividades(D) {
 }
 
 // ---------------------------------------------------------------------------
+// Jobs e subatividades
+// ---------------------------------------------------------------------------
+function relJobs(D) {
+  const pessoa = relEstado.pessoa;
+  const jobs = D.tarefasProj
+    .filter(t => temSubatividades(t))
+    .filter(j => j.status !== 'Concluído' || D.dentro(relData(j.concluidoEm)))
+    .map(j => {
+      const partes = tarefasDoJob(j);
+      return { j, subs: partes.slice(1), gasto: horasDoJob(j), porPessoa: horasPorExecutor(partes) };
+    })
+    .filter(x => pessoa === 'todos' || x.porPessoa.has(pessoa) || tarefasDoJob(x.j).some(t => t.colaboradorId === pessoa))
+    .sort((a, b) => b.gasto - a.gasto);
+
+  const comPrevisto = jobs.filter(x => x.j.tempo_estimado > 0);
+  const estourados = comPrevisto.filter(x => x.gasto > x.j.tempo_estimado).length;
+  const subsTotal = relSoma(jobs, x => x.subs.length);
+  const pessoasNosJobs = new Set(jobs.flatMap(x => [...tarefasDoJob(x.j).map(t => t.colaboradorId), ...x.porPessoa.keys()]));
+  const tile = (rotulo, valor, detalhe) => `
+    <div class="bg-white rounded-xl border border-neutral-200 p-3">
+      <p class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">${rotulo}</p>
+      <p class="text-xl font-black text-neutral-900 leading-tight mt-1">${valor}</p>
+      <p class="text-[10px] text-neutral-500 mt-0.5">${detalhe}</p>
+    </div>`;
+  document.getElementById('rel-j-tiles').innerHTML = [
+    tile('Jobs com subatividades', relFmtInt(jobs.length), `${jobs.filter(x => x.j.status !== 'Concluído').length} em aberto`),
+    tile('Subatividades', relFmtInt(subsTotal), `${relSoma(jobs, x => x.subs.filter(s => s.status === 'Concluído').length)} concluída(s)`),
+    tile('Pessoas envolvidas', relFmtInt(pessoasNosJobs.size), 'responsáveis ou com horas nos jobs'),
+    tile('Jobs acima do previsto', relFmtInt(estourados), comPrevisto.length ? `de ${comPrevisto.length} com tempo previsto` : 'nenhum job com tempo previsto')
+  ].join('');
+
+  const top = jobs.slice(0, 15);
+  const ids = [...new Set(top.flatMap(x => [...x.porPessoa.keys()]))].sort((a, b) => relNomePessoa(a).localeCompare(relNomePessoa(b), 'pt-BR'));
+  relAltura('j-horas', relAlturaHorizontal(top.length, 200));
+  relGrafico('j-horas', {
+    data: {
+      labels: top.map(x => relCurto(x.j.titulo, 30)),
+      datasets: ids.map(id => relBarraEmpilhada(relNomePessoa(id), top.map(x => { const h = x.porPessoa.get(id); return h ? Math.round(h * 100) / 100 : null; }), relCorPessoa(id)))
+    },
+    options: relOpcoes({ horizontal: true, empilhado: true, eixo: v => `${v}h`, valor: fmtHoras, rotulos: { total: true, formato: v => fmtHoras(v) } })
+  }, top.length === 0 || ids.length === 0);
+  relTabela('j-horas', [{ rotulo: 'Job' }, { rotulo: 'Projeto' }, { rotulo: 'Responsável' }, { rotulo: 'Status' }, { rotulo: 'Subatividades', direita: true },
+    { rotulo: 'Previsto', direita: true }, { rotulo: 'Consumido', direita: true }, { rotulo: '% do previsto', direita: true }, { rotulo: 'Horas por pessoa' }],
+    jobs.map(x => {
+      const pct = relPct(x.gasto, x.j.tempo_estimado);
+      return [x.j.titulo, relNomeProjeto(x.j.projetoId), relNomePessoa(x.j.colaboradorId), rotuloStatus(x.j.status),
+        `${x.subs.filter(s => s.status === 'Concluído').length}/${x.subs.length}`,
+        { t: fmtHoras(x.j.tempo_estimado), v: x.j.tempo_estimado }, { t: fmtHoras(x.gasto), v: x.gasto },
+        { t: relFmtPct(pct), v: pct, cls: pct > 100 ? 'text-red-700 font-bold' : '' },
+        [...x.porPessoa.entries()].sort((a, b) => b[1] - a[1]).map(([id, h]) => `${relNomePessoa(id)} ${fmtHoras(h)}`).join(' · ') || '—'];
+    }),
+    { vazio: 'Nenhum job com subatividades no filtro selecionado.' });
+
+  relTabela('j-subs', [{ rotulo: 'Job' }, { rotulo: 'Subatividade' }, { rotulo: 'Responsável' }, { rotulo: 'Status' }, { rotulo: 'Término previsto' }, { rotulo: 'Horas', direita: true }],
+    jobs.flatMap(x => x.subs.map(s => {
+      const atrasada = s.status !== 'Concluído' && terminoEsperado(s) < D.hoje;
+      return [x.j.titulo, s.titulo, relNomePessoa(s.colaboradorId), rotuloStatus(s.status),
+        { t: textoTerminoEsperado(s) + (atrasada ? ' (atrasada)' : ''), v: s.previsaoTermino || s.prazo, cls: atrasada ? 'text-red-700 font-bold' : '' },
+        { t: fmtHoras(s.tempo_gasto), v: s.tempo_gasto }];
+    })),
+    { vazio: 'Nenhuma subatividade no filtro selecionado.' });
+}
+
+// ---------------------------------------------------------------------------
 // Assertividade: tempo previsto × executado
 // ---------------------------------------------------------------------------
-// Só entram atividades concluídas com tempo previsto e com horas apontadas
+// Só entram atividades concluídas com tempo previsto e com horas apontadas.
+// Job com subatividades: o previsto da principal contra as horas de todas as partes (exec).
 function relAssertLinhas(D) {
   const horasEntre = (real, previsto) => (real && previsto) ? (real - previsto) / 3600000 : null;
-  return D.concluidasPer.filter(t => t.tempo_estimado > 0 && t.tempo_gasto > 0).map(t => {
-    const desvioH = t.tempo_gasto - t.tempo_estimado;
+  return D.concluidasPer.filter(t => t.tempo_estimado > 0 && horasParaEstimativa(t) > 0).map(t => {
+    const exec = horasParaEstimativa(t);
+    const desvioH = exec - t.tempo_estimado;
     const desvioPct = (desvioH / t.tempo_estimado) * 100;
     const classe = Math.abs(desvioPct) <= REL_ASSERT_TOL ? 'proximo' : (desvioPct > 0 ? 'mais' : 'menos');
     const iniPrev = relData(t.previsaoInicio), iniReal = relData(t.iniciadoEm);
     const fimPrev = relData(t.previsaoTermino), fimReal = relData(t.concluidoEm);
-    return { t, desvioH, desvioPct, classe, nota: Math.max(0, 100 - Math.abs(desvioPct)),
+    return { t, exec, desvioH, desvioPct, classe, nota: Math.max(0, 100 - Math.abs(desvioPct)),
       iniPrev, iniReal, fimPrev, fimReal, atrasoIni: horasEntre(iniReal, iniPrev), atrasoFim: horasEntre(fimReal, fimPrev) };
   });
 }
@@ -1055,7 +1128,7 @@ function relAssertividade(D) {
   // Agrupa por uma chave e calcula os totais do grupo
   const agrupar = (chave, nome) => [...new Set(L.map(chave))].map(id => {
     const g = L.filter(x => chave(x) === id);
-    return { id, nome: nome(id), g, n: g.length, nota: relMedia(g.map(x => x.nota)), est: relSoma(g, x => x.t.tempo_estimado), exec: relSoma(g, x => x.t.tempo_gasto) };
+    return { id, nome: nome(id), g, n: g.length, nota: relMedia(g.map(x => x.nota)), est: relSoma(g, x => x.t.tempo_estimado), exec: relSoma(g, x => x.exec) };
   }).sort((a, b) => b.nota - a.nota);
   const pessoas = agrupar(x => x.t.colaboradorId, relNomePessoa);
   const projs = agrupar(x => x.t.projetoId, relNomeProjeto);
@@ -1110,8 +1183,8 @@ function relAssertividade(D) {
   const dt = d => d ? d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
   relTabela('as-detalhe',
     [{ rotulo: 'Atividade' }, { rotulo: 'Projeto' }, { rotulo: 'Responsável' }, { rotulo: 'Previsto', direita: true }, { rotulo: 'Executado', direita: true }, { rotulo: 'Desvio', direita: true }, { rotulo: 'Desvio %', direita: true }, { rotulo: 'Assertividade', direita: true }, { rotulo: 'Resultado' }, { rotulo: 'Início previsto' }, { rotulo: 'Início real' }, { rotulo: 'Término previsto' }, { rotulo: 'Término real' }],
-    [...L].sort((a, b) => a.nota - b.nota).map(x => [x.t.titulo, relNomeProjeto(x.t.projetoId), relNomePessoa(x.t.colaboradorId),
-      { t: fmtHoras(x.t.tempo_estimado), v: x.t.tempo_estimado }, { t: fmtHoras(x.t.tempo_gasto), v: x.t.tempo_gasto }, { t: sinal(x.desvioH), v: x.desvioH },
+    [...L].sort((a, b) => a.nota - b.nota).map(x => [x.t.titulo + (temSubatividades(x.t) ? ' (job)' : ''), relNomeProjeto(x.t.projetoId), relNomePessoa(x.t.colaboradorId),
+      { t: fmtHoras(x.t.tempo_estimado), v: x.t.tempo_estimado }, { t: fmtHoras(x.exec), v: x.exec }, { t: sinal(x.desvioH), v: x.desvioH },
       { t: `${x.desvioPct > 0 ? '+' : ''}${relFmtPct(x.desvioPct)}`, v: x.desvioPct }, { t: relFmtPct(x.nota), v: x.nota }, CLASSES[x.classe].rotulo, dt(x.iniPrev), dt(x.iniReal), dt(x.fimPrev), dt(x.fimReal)]),
     { vazio: 'Nenhuma atividade concluída com previsão e horas apontadas no período.' });
 }
@@ -1219,7 +1292,7 @@ function relEquipe(D) {
       const co = D.concluidasPer.filter(t => t.colaboradorId === id);
       const pz = relPct(co.filter(t => t.slaCumprido !== false).length, co.length);
       const h = horasDe(id);
-      const dv = relMedia(co.filter(t => t.tempo_estimado > 0).map(t => ((t.tempo_gasto - t.tempo_estimado) / t.tempo_estimado) * 100));
+      const dv = relMedia(co.filter(t => t.tempo_estimado > 0).map(t => ((horasParaEstimativa(t) - t.tempo_estimado) / t.tempo_estimado) * 100));
       const pausas = anot ? anot.filter(a => a.tipo === 'pausa' && a.autor_id === id).length : '…';
       const devol = anot ? anot.filter(a => a.tipo === 'devolucao' && (D.tarefaPorId.get(a.tarefa_id) || {}).colaboradorId === id).length : '…';
       return [relNomePessoa(id), ab.length, { t: at.length, v: at.length, cls: at.length ? 'text-red-700 font-bold' : '' }, co.length, relFmtPct(pz),
