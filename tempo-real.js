@@ -40,6 +40,8 @@ function rtRedesenhar() {
     renderizarTabelaUsuariosEquipe();
   }
 
+  if (typeof pavAoAtualizarDados === 'function') pavAoAtualizarDados(); // painel-ao-vivo.js (se estiver aberto)
+
   colunas.forEach((c, i) => { c.scrollTop = rolagens[i]; });
   window.scrollTo(window.scrollX, rolagemPagina);
 }
