@@ -138,6 +138,7 @@
         <div id="nav-colaborador" class="nav-abas hidden flex gap-2 text-xs font-bold">
           <button onclick="navegarColaborador('dashboard')" id="btnColabDash" class="px-3 py-1.5 rounded bg-red-600 text-white">1. Minhas Atividades</button>
           <button onclick="navegarColaborador('kanban')" id="btnColabKanban" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">2. Quadro Kanban</button>
+          <button onclick="navegarColaborador('aovivo')" id="btnColabAoVivo" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400 whitespace-nowrap">3. Meu desempenho</button>
           <button onclick="abrirModalNovaTarefa()" class="px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-white">+ Criar Atividade</button>
         </div>
 
@@ -147,6 +148,7 @@
           <button onclick="navegarGestor('lancamento')" id="btnGestorLanc" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Lançar Gasto</button>
           <button onclick="navegarGestor('pilares')" id="btnGestorPil" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Definição Orçamentária</button>
           <button onclick="navegarGestor('kanban_geral')" id="btnGestorKanban" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Kanban Geral</button>
+          <button onclick="navegarGestor('aovivo')" id="btnGestorAoVivo" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400 whitespace-nowrap">⚡ Ao vivo</button>
           <button onclick="navegarGestor('equipe')" id="btnGestorEquipe" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">Gestão de Equipe<span id="badgeSolicitacoes" class="hidden ml-1.5 px-1.5 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black"></span></button>
           <button onclick="navegarGestor('relatorios')" id="btnGestorRelatorios" class="px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400">📊 Relatórios</button>
           <button onclick="abrirModalNovaTarefa()" id="btnGestorCriarTarefa" class="px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-white">+ Atribuir Tarefa</button>
@@ -195,6 +197,8 @@
 
 
 <!-- TELA 2: QUADRO KANBAN & APONTAMENTO -->
+        <section id="colab-tela-aovivo" class="hidden space-y-6"></section>
+
         <section id="colab-tela-kanban" class="hidden space-y-6">
           <div class="glass-card p-4 rounded-xl border border-neutral-200 space-y-3">
             <div class="flex flex-wrap justify-between items-center gap-3">
@@ -577,6 +581,7 @@
 
         <!-- SUB-SEÇÃO: RELATÓRIOS (GESTÃO E DIRETORIA) — conteúdo montado por relatorios.js -->
         <section id="gestor-secao-relatorios" class="hidden space-y-6"></section>
+        <section id="gestor-secao-aovivo" class="hidden space-y-4"></section>
 
       </div>
 
@@ -1022,7 +1027,7 @@
           ? clienteSupabase.rpc('listar_equipe_atribuivel').then(({ data, error }) => { if (error) throw error; return data || []; })
           : Promise.resolve([]),
         // Sessões de trabalho: base para atribuir horas a quem executou (mesmo após transferência)
-        clienteSupabase.from('tarefa_sessoes').select('tarefa_id,colaborador_id,inicio,fim')
+        clienteSupabase.from('tarefa_sessoes').select('tarefa_id,colaborador_id,inicio,fim,encerramento')
           .then(({ data, error }) => { sessoesDisponiveis = !error; return error ? [] : (data || []); })
       ]);
       equipeAtribuivel = linhasEquipe;
@@ -1031,7 +1036,7 @@
         const { data: nomes } = await clienteSupabase.rpc('nomes_da_equipe');
         nomesEquipe = new Map((nomes || []).map(u => [u.id, u.nome]));
       }
-      sessoes = linhasSessoes.map(s => ({ tarefaId: s.tarefa_id, colaboradorId: s.colaborador_id, inicio: s.inicio, fim: s.fim }));
+      sessoes = linhasSessoes.map(s => ({ tarefaId: s.tarefa_id, colaboradorId: s.colaborador_id, inicio: s.inicio, fim: s.fim, encerramento: s.encerramento || null }));
       // KPIs dos projetos (gestão e diretoria) — kpis.js
       if (typeof kpiCarregar === 'function') await kpiCarregar();
 
@@ -1263,6 +1268,7 @@
 
     async function executarLogout() {
       rtParar();
+      pavLimpar(); // painel-ao-vivo.js
       await notifAoSair();
       await clienteSupabase.auth.signOut();
       usuarioLogado = null;
@@ -1330,14 +1336,20 @@
     function navegarColaborador(tela) {
       document.getElementById('colab-tela-dashboard').classList.add('hidden');
       document.getElementById('colab-tela-kanban').classList.add('hidden');
+      document.getElementById('colab-tela-aovivo').classList.add('hidden');
 
       document.getElementById('btnColabDash').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
       document.getElementById('btnColabKanban').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
+      document.getElementById('btnColabAoVivo').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400 whitespace-nowrap";
 
       if (tela === 'dashboard') {
         document.getElementById('colab-tela-dashboard').classList.remove('hidden');
         document.getElementById('btnColabDash').className = "px-3 py-1.5 rounded bg-red-600 text-white";
         renderizarDashboardColaborador();
+      } else if (tela === 'aovivo') {
+        document.getElementById('colab-tela-aovivo').classList.remove('hidden');
+        document.getElementById('btnColabAoVivo').className = "px-3 py-1.5 rounded bg-red-600 text-white whitespace-nowrap";
+        pavAbrir(); // painel-ao-vivo.js
       } else {
         document.getElementById('colab-tela-kanban').classList.remove('hidden');
         document.getElementById('btnColabKanban').className = "px-3 py-1.5 rounded bg-red-600 text-white";
@@ -1361,7 +1373,9 @@
       document.getElementById('gestor-secao-pilares').classList.add('hidden');
       document.getElementById('gestor-secao-equipe').classList.add('hidden');
       document.getElementById('gestor-secao-relatorios').classList.add('hidden');
+      document.getElementById('gestor-secao-aovivo').classList.add('hidden');
       document.getElementById('container-colaborador').classList.add('hidden');
+      document.getElementById('btnGestorAoVivo').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400 whitespace-nowrap";
 
       document.getElementById('btnGestorBudget').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
       document.getElementById('btnGestorLanc').className = "px-3 py-1.5 rounded hover:bg-neutral-800 text-neutral-400";
@@ -1394,6 +1408,10 @@
         document.getElementById('colab-tela-kanban').classList.remove('hidden');
         document.getElementById('btnGestorKanban').className = "px-3 py-1.5 rounded bg-red-600 text-white";
         renderizarKanbanGeral();
+      } else if (aba === 'aovivo') {
+        document.getElementById('gestor-secao-aovivo').classList.remove('hidden');
+        document.getElementById('btnGestorAoVivo').className = "px-3 py-1.5 rounded bg-red-600 text-white whitespace-nowrap";
+        pavAbrir(); // painel-ao-vivo.js
       } else if (aba === 'equipe') {
         document.getElementById('gestor-secao-equipe').classList.remove('hidden');
         document.getElementById('btnGestorEquipe').className = "px-3 py-1.5 rounded bg-red-600 text-white";
@@ -3486,6 +3504,7 @@
   <script src="transferencia-lote.js"></script>
   <script src="kanban-filtros.js"></script>
   <script src="subatividades.js"></script>
+  <script src="painel-ao-vivo.js"></script>
   <script src="tempo-real.js"></script>
 </body>
 </html>
